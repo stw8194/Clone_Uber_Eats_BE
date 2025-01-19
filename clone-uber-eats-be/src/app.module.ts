@@ -8,7 +8,6 @@ import * as Joi from 'joi';
 import { Restaurant } from './restaurants/entities/restaurants.entity';
 
 @Module({
-  // root 모듈을 설정하는 것
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
@@ -34,7 +33,7 @@ import { Restaurant } from './restaurants/entities/restaurants.entity';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       synchronize: process.env.NODE_ENV !== 'prod',
-      logging: true,
+      logging: process.env.NODE_ENV !== 'prod',
       entities: [Restaurant],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({

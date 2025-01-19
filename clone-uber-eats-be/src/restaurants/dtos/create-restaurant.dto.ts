@@ -5,7 +5,7 @@ import { IsBoolean, IsString, Length } from 'class-validator';
 export class CreateRestaurantDto {
   @Field((type) => String)
   @IsString()
-  @Length(5, 10)
+  @Length(4, 10)
   name: string;
 
   @Field((type) => Boolean)
@@ -19,4 +19,8 @@ export class CreateRestaurantDto {
   @Field((type) => String)
   @IsString()
   ownerName: string;
+
+  @Field((type) => String)
+  @IsString()
+  categoryName: string;
 }

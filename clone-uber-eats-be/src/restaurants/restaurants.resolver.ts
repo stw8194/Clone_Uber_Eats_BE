@@ -8,11 +8,19 @@ export class RestaurantResolver {
   constructor(private readonly restaurantService: RestaurantService) {}
   // returns가 알기 쉬워서 쓸 뿐 ()도 상관 없음(query returnes boolean)
   @Query((returns) => [Restaurant])
-  restaurant(): Restaurant[] {
+  restaurant(): Promise<Restaurant[]> {
     return this.restaurantService.getAll();
   }
   @Mutation((returns) => Boolean)
-  createRestaurant(@Args() createRestaurantDto: CreateRestaurantDto): boolean {
-    return true;
+  async createRestaurant(
+    @Args() createRestaurantDto: CreateRestaurantDto,
+  ): Promise<boolean> {
+    try {
+      await this.restaurantService.createRestaurant(createRestaurantDto);
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
   }
 }
