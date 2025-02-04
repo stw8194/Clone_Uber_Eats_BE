@@ -52,11 +52,9 @@ import { AuthModule } from './auth/auth.module';
       context: ({ req }) => ({ user: req['user'] }),
     }),
     UsersModule,
-    CommonModule,
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
-    AuthModule,
   ],
   controllers: [],
   providers: [],
