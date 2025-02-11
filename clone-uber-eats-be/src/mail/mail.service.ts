@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CONFIG_OPTIONS } from 'src/common/common.constants';
 import { MailModuleOptions, EmailVars } from './mail.interfaces';
 import got from 'got';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 
 @Injectable()
 export class MailService {
@@ -36,7 +36,7 @@ export class MailService {
     }
   }
 
-  senVerificationEmail(email: string, code: string) {
+  sendVerificationEmail(email: string, code: string) {
     this.sendEmail(email, 'Verify Your Email', 'verify-email', [
       { key: 'code', value: code },
       { key: 'username', value: email },
