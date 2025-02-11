@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 
 const mockRepository = {
   findOne: jest.fn(),
+  findOneBy: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
 };
@@ -57,7 +58,24 @@ describe('UserService', () => {
     expect(service).toBeDefined();
   });
 
-  it.todo('createAccount');
+  describe('createAccount', () => {
+    it('should fail if user exists', async () => {
+      userRepository.findOneBy.mockResolvedValue({
+        id: 1,
+        email: 'test@test.com',
+      });
+      const result = await service.createAccount({
+        email: '',
+        password: '',
+        role: 0,
+      });
+      expect(result).toMatchObject({
+        ok: false,
+        error: 'There is a user with that email already',
+      });
+    });
+  });
+
   it.todo('login');
   it.todo('findById');
   it.todo('EditProfile');
