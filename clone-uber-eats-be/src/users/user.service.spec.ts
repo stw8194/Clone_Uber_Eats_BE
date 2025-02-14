@@ -27,7 +27,9 @@ type mockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 
 describe('UserService', () => {
   let service: UserService;
+  let mailService: MailService;
   let userRepository: mockRepository<User>;
+  let verificationRepository: mockRepository<Verification>;
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       providers: [
@@ -51,7 +53,9 @@ describe('UserService', () => {
       ],
     }).compile();
     service = module.get<UserService>(UserService);
+    mailService = module.get<MailService>(MailService);
     userRepository = module.get(getRepositoryToken(User));
+    verificationRepository = module.get(getRepositoryToken(Verification));
   });
 
   it('should be defined', () => {
@@ -79,11 +83,34 @@ describe('UserService', () => {
     it('should create a new user', async () => {
       userRepository.findOneBy.mockResolvedValue(undefined);
       userRepository.create.mockReturnValue(createAccountArgs);
-      await service.createAccount(createAccountArgs);
+      userRepository.save.mockResolvedValue(createAccountArgs);
+      verificationRepository.create.mockReturnValue(createAccountArgs);
+      verificationRepository.save.mockResolvedValue({ code: 'code' });
+      const result = await service.createAccount(createAccountArgs);
       expect(userRepository.create).toHaveBeenCalledTimes(1);
       expect(userRepository.create).toHaveBeenCalledWith(createAccountArgs);
       expect(userRepository.save).toHaveBeenCalledTimes(1);
       expect(userRepository.save).toHaveBeenCalledWith(createAccountArgs);
+      expect(verificationRepository.create).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.create).toHaveBeenCalledWith({
+        user: createAccountArgs,
+      });
+      expect(verificationRepository.save).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.save).toHaveBeenCalledWith(
+        createAccountArgs,
+      );
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+      );
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on exception', async () => {
+      userRepository.findOneBy.mockRejectedValue(new Error());
+      const result = await service.createAccount(createAccountArgs);
+      expect(result).toEqual({ ok: false, error: "Couldn't create account" });
     });
   });
 
