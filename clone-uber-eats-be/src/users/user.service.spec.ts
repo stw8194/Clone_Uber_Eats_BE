@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 const mockRepository = () => ({
   findOne: jest.fn(),
   findOneBy: jest.fn(),
+  findOneByOrFail: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
 });
@@ -161,7 +162,26 @@ describe('UserService', () => {
       expect(result).toEqual({ ok: false, error: "Can't log user in" });
     });
   });
-  it.todo('findById');
+
+  describe('findById', () => {
+    const findByIdArgs = {
+      id: 1,
+    };
+    it('should find an existing user', async () => {
+      userRepository.findOneByOrFail.mockResolvedValue(findByIdArgs);
+      const result = await service.findById(1);
+      expect(result).toEqual({
+        ok: true,
+        user: findByIdArgs,
+      });
+    });
+
+    it('should fail if no user is found', async () => {
+      userRepository.findOneByOrFail.mockRejectedValue(new Error());
+      const result = await service.findById(1);
+      expect(result).toEqual({ ok: false, error: 'User not Found' });
+    });
+  });
   it.todo('EditProfile');
   it.todo('verifyEmail');
 });
