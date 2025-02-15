@@ -112,7 +112,7 @@ export class UserService {
         ok: true,
       };
     } catch (error) {
-      return { ok: false, error: 'Could not update profile.' };
+      return { ok: false, error: 'Could not update profile' };
     }
   }
 
@@ -128,7 +128,7 @@ export class UserService {
         await this.verifications.delete(verification.id);
         return { ok: true };
       }
-      return { ok: false, error: 'Verification not found.' };
+      return { ok: false, error: 'Verification not found' };
     } catch (error) {
       return { ok: false, error };
     }

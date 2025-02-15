@@ -182,6 +182,65 @@ describe('UserService', () => {
       expect(result).toEqual({ ok: false, error: 'User not Found' });
     });
   });
-  it.todo('EditProfile');
+
+  describe('editProfile', () => {
+    it('should change email', async () => {
+      const oldUser = {
+        email: 'old',
+        verified: true,
+      };
+      const editProfileArgs = {
+        userId: 1,
+        input: { email: 'new' },
+      };
+      const newVerification = {
+        code: 'code',
+      };
+      const newUser = {
+        verified: false,
+        email: editProfileArgs.input.email,
+      };
+
+      userRepository.findOneBy.mockResolvedValue(oldUser);
+      verificationRepository.create.mockReturnValue(newVerification);
+      verificationRepository.save.mockResolvedValue(newVerification);
+
+      await service.editProfile(editProfileArgs.userId, editProfileArgs.input);
+      expect(userRepository.findOneBy).toBeCalledTimes(1);
+      expect(userRepository.findOneBy).toHaveBeenCalledWith({
+        id: editProfileArgs.userId,
+      });
+      expect(verificationRepository.create).toHaveBeenCalledWith({
+        user: newUser,
+      });
+      expect(verificationRepository.save).toHaveBeenCalledWith(newVerification);
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+        newUser.email,
+        newVerification.code,
+      );
+    });
+
+    it('should change password', async () => {
+      const editProfileArgs = {
+        userId: 1,
+        input: { password: 'new' },
+      };
+
+      userRepository.findOneBy.mockResolvedValue({ password: 'old' });
+      const result = await service.editProfile(
+        editProfileArgs.userId,
+        editProfileArgs.input,
+      );
+      expect(userRepository.save).toHaveBeenCalledTimes(1);
+      expect(userRepository.save).toHaveBeenCalledWith(editProfileArgs.input);
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail on expection', async () => {
+      userRepository.findOneBy.mockRejectedValue(new Error());
+      const result = await service.editProfile(1, { email: '' });
+      expect(result).toEqual({ ok: false, error: 'Could not update profile' });
+    });
+  });
   it.todo('verifyEmail');
 });
