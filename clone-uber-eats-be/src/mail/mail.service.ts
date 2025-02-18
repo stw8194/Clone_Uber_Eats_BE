@@ -2,14 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CONFIG_OPTIONS } from 'src/common/common.constants';
 import { MailModuleOptions, EmailVars } from './mail.interfaces';
 import got from 'got';
-import FormData from 'form-data';
+import * as FormData from 'form-data';
 
 @Injectable()
 export class MailService {
   constructor(
     @Inject(CONFIG_OPTIONS) private readonly options: MailModuleOptions,
   ) {}
-  private sendEmail(
+  sendEmail(
     to: string,
     subject: string,
     template: string,

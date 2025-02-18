@@ -207,7 +207,7 @@ describe('UserService', () => {
       verificationRepository.save.mockResolvedValue(newVerification);
 
       await service.editProfile(editProfileArgs.userId, editProfileArgs.input);
-      expect(userRepository.findOneBy).toBeCalledTimes(1);
+      expect(userRepository.findOneBy).toHaveBeenCalledTimes(1);
       expect(userRepository.findOneBy).toHaveBeenCalledWith({
         id: editProfileArgs.userId,
       });
@@ -261,10 +261,10 @@ describe('UserService', () => {
         where: expect.any(Object),
         relations: expect.any(Array),
       });
-      expect(userRepository.save).toBeCalledTimes(1);
-      expect(userRepository.save).toBeCalledWith({ verified: true });
-      expect(verificationRepository.delete).toBeCalledTimes(1);
-      expect(verificationRepository.delete).toBeCalledWith(
+      expect(userRepository.save).toHaveBeenCalledTimes(1);
+      expect(userRepository.save).toHaveBeenCalledWith({ verified: true });
+      expect(verificationRepository.delete).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.delete).toHaveBeenCalledWith(
         mockedVerification.id,
       );
       expect(result).toEqual({ ok: true });

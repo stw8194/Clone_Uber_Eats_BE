@@ -36,8 +36,8 @@ describe('JwtService', () => {
     it('should return a signed token', () => {
       const token = service.sign(USER_ID);
       expect(typeof token).toBe('string');
-      expect(jwt.sign).toBeCalledTimes(1);
-      expect(jwt.sign).toBeCalledWith({ id: USER_ID }, TEST_KEY);
+      expect(jwt.sign).toHaveBeenCalledTimes(1);
+      expect(jwt.sign).toHaveBeenCalledWith({ id: USER_ID }, TEST_KEY);
     });
   });
   describe('verify', () => {
