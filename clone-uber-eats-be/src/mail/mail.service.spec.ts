@@ -8,6 +8,11 @@ import { error } from 'console';
 jest.mock('got');
 jest.mock('form-data');
 
+const sendVerificationEmailArgs = {
+  email: 'email',
+  code: 'code',
+};
+
 const TEST_DOMAIN = 'test-DOMAIN';
 const TEST_APIKEY = 'test-API_KEY';
 
@@ -37,33 +42,23 @@ describe('MailService', () => {
 
   describe('sendVerificationEmail', () => {
     it('should call sendEmail', () => {
-      const sendVerificationEmailArgs = {
-        email: 'email',
-        code: 'code',
-      };
-      jest.spyOn(service, 'sendEmail').mockImplementation(async () => true);
+      jest.spyOn(service, 'sendVerificationEmail');
       service.sendVerificationEmail(
         sendVerificationEmailArgs.email,
         sendVerificationEmailArgs.code,
       );
-      expect(service.sendEmail).toHaveBeenCalledTimes(1);
-      expect(service.sendEmail).toHaveBeenCalledWith(
-        sendVerificationEmailArgs.email,
-        'Verify Your Email',
-        'verify-email',
-        [
-          { key: 'code', value: sendVerificationEmailArgs.code },
-          { key: 'username', value: sendVerificationEmailArgs.email },
-        ],
-      );
+      expect(service.sendVerificationEmail).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('sendEmail', () => {
     it('should send email', async () => {
-      const ok = await service.sendEmail('', '', '', []);
+      const ok = await service.sendVerificationEmail(
+        sendVerificationEmailArgs.email,
+        sendVerificationEmailArgs.code,
+      );
       const formSpy = jest.spyOn(FormData.prototype, 'append');
-      expect(formSpy).toHaveBeenCalledTimes(4);
+      expect(formSpy).toHaveBeenCalledTimes(6);
       expect(got.post).toHaveBeenCalledTimes(1);
       expect(got.post).toHaveBeenCalledWith(
         `https://api.mailgun.net/v3/${TEST_DOMAIN}/messages`,
@@ -72,17 +67,12 @@ describe('MailService', () => {
       expect(ok).toEqual(true);
     });
 
-    it('should append each email vars separately', async () => {
-      const emailVar = [{ key: 'test-key', value: 'test-value' }];
-      const varSpy = jest.spyOn(emailVar, 'forEach');
-      await service.sendEmail('', '', '', emailVar);
-
-      expect(varSpy).toHaveBeenCalledTimes(1);
-    });
-
     it('should encode the API key using Buffer', async () => {
       const bufferSpy = jest.spyOn(Buffer, 'from');
-      await service.sendEmail('', '', '', []);
+      await service.sendVerificationEmail(
+        sendVerificationEmailArgs.email,
+        sendVerificationEmailArgs.code,
+      );
       expect(bufferSpy).toHaveBeenCalledTimes(1);
       expect(bufferSpy).toHaveBeenCalledWith(`api:${TEST_APIKEY}`);
     });
@@ -91,7 +81,10 @@ describe('MailService', () => {
       jest.spyOn(got, 'post').mockImplementation(() => {
         throw error();
       });
-      const ok = await service.sendEmail('', '', '', []);
+      const ok = await service.sendVerificationEmail(
+        sendVerificationEmailArgs.email,
+        sendVerificationEmailArgs.code,
+      );
       expect(ok).toEqual(false);
     });
   });
