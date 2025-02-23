@@ -9,12 +9,12 @@ export class MailService {
   constructor(
     @Inject(CONFIG_OPTIONS) private readonly options: MailModuleOptions,
   ) {}
-  sendEmail(
+  async sendEmail(
     to: string,
     subject: string,
     template: string,
     emailVars: EmailVars[],
-  ) {
+  ): Promise<boolean> {
     const form = new FormData();
     form.append('from', `Uber-eats Clone <postmaster@${this.options.domain}>`);
     form.append('to', to);
@@ -22,17 +22,20 @@ export class MailService {
     form.append('template', template);
     emailVars.forEach((eVar) => form.append(`v:${eVar.key}`, eVar.value));
     try {
-      got(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Basic ${Buffer.from(
-            `api:${this.options.apiKey}`,
-          ).toString('base64')}`,
+      await got.post(
+        `https://api.mailgun.net/v3/${this.options.domain}/messages`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `api:${this.options.apiKey}`,
+            ).toString('base64')}`,
+          },
+          body: form,
         },
-        body: form,
-      });
+      );
+      return true;
     } catch (error) {
-      console.log(error);
+      return false;
     }
   }
 
