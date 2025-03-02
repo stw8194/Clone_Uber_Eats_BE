@@ -99,6 +99,7 @@ export class UserService {
       if (email) {
         user.email = email;
         user.verified = false;
+        await this.verifications.delete({ user: { id: user.id } });
         const verification = await this.verifications.save(
           this.verifications.create({ user }),
         );
@@ -112,6 +113,12 @@ export class UserService {
         ok: true,
       };
     } catch (error) {
+      if (error.table == 'user') {
+        return {
+          ok: false,
+          error: 'This email is already in use',
+        };
+      }
       return { ok: false, error: 'Could not update profile' };
     }
   }
