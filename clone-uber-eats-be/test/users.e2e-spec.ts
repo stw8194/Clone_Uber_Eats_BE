@@ -38,7 +38,7 @@ describe('UserModule (e2e)', () => {
 
     await dataSource.dropDatabase();
     await dataSource.destroy();
-    app.close();
+    await app.close();
   });
 
   describe('createAccount', () => {
@@ -242,7 +242,54 @@ describe('UserModule (e2e)', () => {
         });
     });
   });
-  it.todo('me');
+
+  describe('me', () => {
+    it('should find my profile', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `{
+                    me{
+                      email
+                    }
+                  }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                me: { email },
+              },
+            },
+          } = res;
+          expect(email).toBe(testUser.email);
+        });
+    });
+
+    it('should find my profile', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `{
+                    me{
+                      email
+                    }
+                  }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              errors: [{ message }],
+            },
+          } = res;
+          expect(message).toBe('Forbidden resource');
+        });
+    });
+  });
+
   it.todo('verifyEmail');
   it.todo('editProfile');
 });
