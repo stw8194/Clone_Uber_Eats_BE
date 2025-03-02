@@ -268,7 +268,7 @@ describe('UserModule (e2e)', () => {
         });
     });
 
-    it('should find my profile', () => {
+    it('should not allow logged out user', () => {
       return request(app.getHttpServer())
         .post(GRAPHQL_ENDPOINT)
         .send({
@@ -290,6 +290,133 @@ describe('UserModule (e2e)', () => {
     });
   });
 
+  describe('editProfile', () => {
+    const NEW_EMAIL = 'new@song.com';
+    it('should change email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `mutation {
+                    editProfile (input: {
+                      email: "${NEW_EMAIL}"
+                      }) {
+                    ok
+                    error
+                    }
+                  }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editProfile: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+
+    it('should have new email', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `{
+                  me{
+                    email
+                  }
+                }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                me: { email },
+              },
+            },
+          } = res;
+          expect(email).toBe(NEW_EMAIL);
+        });
+    });
+
+    it('should throw an error if someone is using the email address', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .send({
+          query: `mutation {
+                    createAccount(
+                      input:{
+                        email:"${testUser.email}",
+                        password:"${testUser.password}",
+                        role:Owner
+                      }) {
+                      ok
+                      error
+                    }
+                  }`,
+        })
+        .then(() => {
+          request(app.getHttpServer())
+            .post(GRAPHQL_ENDPOINT)
+            .set('X-JWT', jwtToken)
+            .send({
+              query: `mutation {
+                    editProfile (input: {
+                      email: "${testUser.email}"
+                      }) {
+                    ok
+                    error
+                    }
+                  }`,
+            })
+            .expect(200)
+            .expect((res) => {
+              const {
+                body: {
+                  data: {
+                    editProfile: { ok, error },
+                  },
+                },
+              } = res;
+              expect(ok).toBe(false);
+              expect(error).toBe('This email is already in use');
+            });
+        });
+    });
+
+    it('should throw an error if edit without changing the email ', () => {
+      return request(app.getHttpServer())
+        .post(GRAPHQL_ENDPOINT)
+        .set('X-JWT', jwtToken)
+        .send({
+          query: `mutation {
+                    editProfile (input: {
+                      email: "${testUser.email}"
+                      }) {
+                    ok
+                    error
+                    }
+                  }`,
+        })
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editProfile: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe('This email is already in use');
+        });
+    });
+  });
+
   it.todo('verifyEmail');
-  it.todo('editProfile');
 });
