@@ -37,7 +37,7 @@ export class MailService {
         },
       );
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

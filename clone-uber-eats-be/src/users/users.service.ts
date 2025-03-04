@@ -2,7 +2,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { CreateAccountInput } from './dtos/create-account.dto';
+import {
+  CreateAccountInput,
+  CreateAccountOutput,
+} from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { JwtService } from 'src/jwt/jwt.service';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
@@ -25,7 +28,7 @@ export class UserService {
     email,
     password,
     role,
-  }: CreateAccountInput): Promise<{ ok: boolean; error?: string }> {
+  }: CreateAccountInput): Promise<CreateAccountOutput> {
     try {
       const exists = await this.users.findOneBy({ email });
       if (exists) {
@@ -41,7 +44,7 @@ export class UserService {
       );
       this.mailService.sendVerificationEmail(user.email, verification.code);
       return { ok: true };
-    } catch (error) {
+    } catch {
       return { ok: false, error: "Couldn't create account" };
     }
   }
@@ -70,7 +73,7 @@ export class UserService {
         ok: true,
         token,
       };
-    } catch (error) {
+    } catch {
       return {
         ok: false,
         error: "Can't log user in",
@@ -85,7 +88,7 @@ export class UserService {
         ok: true,
         user,
       };
-    } catch (error) {
+    } catch {
       return { ok: false, error: 'User not Found' };
     }
   }
@@ -137,7 +140,7 @@ export class UserService {
         return { ok: true };
       }
       return { ok: false, error: 'Verification not found' };
-    } catch (error) {
+    } catch {
       return { ok: false, error: 'Could not verify email' };
     }
   }
