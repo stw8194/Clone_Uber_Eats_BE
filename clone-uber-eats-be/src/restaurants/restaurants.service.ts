@@ -12,29 +12,15 @@ import {
   EditRestaurantInput,
   EditRestaurantOutput,
 } from './dtos/edit-restaurant.dto';
+import { CategoryRepository } from './repositories/category.repository';
 
 @Injectable()
 export class RestaurantService {
   constructor(
     @InjectRepository(Restaurant)
     private readonly restaurants: Repository<Restaurant>,
-    @InjectRepository(Category)
-    private readonly categories: Repository<Category>,
+    private readonly categories: CategoryRepository,
   ) {}
-
-  private async getOrCreateCategory(name: string): Promise<Category> {
-    const categoryName = name.trim().toLowerCase();
-    const categorySlug = categoryName.replace(/ /g, '-');
-    let category = await this.categories.findOne({
-      where: { slug: categorySlug },
-    });
-    if (!category) {
-      category = await this.categories.save(
-        this.categories.create({ slug: categorySlug, name: categoryName }),
-      );
-    }
-    return category;
-  }
 
   async createRestaurant(
     owner: User,
@@ -43,7 +29,7 @@ export class RestaurantService {
     try {
       const newRestaurant = this.restaurants.create(createRestaurantInput);
       newRestaurant.owner = owner;
-      const category = await this.getOrCreateCategory(
+      const category = await this.categories.getOrCreate(
         createRestaurantInput.categoryName,
       );
       newRestaurant.category = category;
@@ -77,13 +63,21 @@ export class RestaurantService {
           error: "You cannot edit a restaurant that you don't own",
         };
       }
+      let category: Category = null;
       if (editRestaurantInput.categoryName) {
-        const category = await this.getOrCreateCategory(
+        console.log(this.categories instanceof CategoryRepository);
+        category = await this.categories.getOrCreate(
           editRestaurantInput.categoryName,
         );
         restaurant.category = category;
       }
-      await this.restaurants.save({ ...restaurant, ...editRestaurantInput });
+      await this.restaurants.save([
+        {
+          id: editRestaurantInput.restaurantId,
+          ...editRestaurantInput,
+          ...(category && { category }),
+        },
+      ]);
       return { ok: true };
     } catch {
       return {
