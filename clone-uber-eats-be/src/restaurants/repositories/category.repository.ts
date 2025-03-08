@@ -8,7 +8,7 @@ export class CategoryRepository extends Repository<Category> {
     super(Category, dataSource.createEntityManager());
   }
 
-  async getOrCreate(name: string) {
+  async getOrCreate(name: string): Promise<Category> {
     const categoryName = name.trim().toLowerCase();
     const categorySlug = categoryName.replace(/ /g, '-');
     let category = await this.findOne({

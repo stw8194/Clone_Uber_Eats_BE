@@ -1,7 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Restaurant } from './entities/restaurants.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import {
   CreateRestaurantInput,
   CreateRestaurantOutput,
@@ -13,16 +10,14 @@ import {
   EditRestaurantOutput,
 } from './dtos/edit-restaurant.dto';
 import { CategoryRepository } from './repositories/category.repository';
-import {
-  DeleteRestaurantInput,
-  DeleteRestaurantOutput,
-} from './dtos/delete-restaurant.dto';
+import { DeleteRestaurantOutput } from './dtos/delete-restaurant.dto';
+import { RestaurantRepository } from './repositories/restaurant.repository';
+import { Restaurant } from './entities/restaurants.entity';
 
 @Injectable()
 export class RestaurantService {
   constructor(
-    @InjectRepository(Restaurant)
-    private readonly restaurants: Repository<Restaurant>,
+    private readonly restaurants: RestaurantRepository,
     private readonly categories: CategoryRepository,
   ) {}
 
@@ -52,24 +47,16 @@ export class RestaurantService {
     editRestaurantInput: EditRestaurantInput,
   ): Promise<EditRestaurantOutput> {
     try {
-      const restaurant = await this.restaurants.findOne({
-        where: { id: editRestaurantInput.restaurantId },
-      });
-      if (!restaurant) {
-        return {
-          ok: false,
-          error: 'Restaurant not found',
-        };
-      }
-      if (restaurant.ownerId !== owner.id) {
-        return {
-          ok: false,
-          error: "You cannot edit a restaurant that you don't own",
-        };
+      const restaurant = await this.restaurants.findAndCheck(
+        editRestaurantInput.restaurantId,
+        owner,
+        'edit',
+      );
+      if (!(restaurant instanceof Restaurant)) {
+        return restaurant;
       }
       let category: Category = null;
       if (editRestaurantInput.categoryName) {
-        console.log(this.categories instanceof CategoryRepository);
         category = await this.categories.getOrCreate(
           editRestaurantInput.categoryName,
         );
@@ -96,18 +83,13 @@ export class RestaurantService {
     restaurantId: number,
   ): Promise<DeleteRestaurantOutput> {
     try {
-      const restaurant = await this.restaurants.findOneBy({ id: restaurantId });
-      if (!restaurant) {
-        return {
-          ok: false,
-          error: 'Restaurant not found',
-        };
-      }
-      if (restaurant.owner != owner) {
-        return {
-          ok: false,
-          error: "You cannot delete a restaurant that you don't own",
-        };
+      const restaurant = await this.restaurants.findAndCheck(
+        restaurantId,
+        owner,
+        'edit',
+      );
+      if (!(restaurant instanceof Restaurant)) {
+        return restaurant;
       }
       await this.restaurants.delete({ id: restaurantId });
       return {
