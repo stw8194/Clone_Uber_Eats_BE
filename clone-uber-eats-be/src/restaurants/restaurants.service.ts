@@ -13,6 +13,7 @@ import { CategoryRepository } from './repositories/category.repository';
 import { DeleteRestaurantOutput } from './dtos/delete-restaurant.dto';
 import { RestaurantRepository } from './repositories/restaurant.repository';
 import { Restaurant } from './entities/restaurants.entity';
+import { AllCategoriesOutput } from './dtos/all-categories.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -101,5 +102,24 @@ export class RestaurantService {
         error: 'Could not delete restaurant',
       };
     }
+  }
+
+  async allCategories(): Promise<AllCategoriesOutput> {
+    try {
+      const categories = await this.categories.find();
+      return {
+        ok: true,
+        categories,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load categories',
+      };
+    }
+  }
+
+  async countRestaurants(category: Category) {
+    return this.restaurants.countBy({ category: { id: category.id } });
   }
 }
