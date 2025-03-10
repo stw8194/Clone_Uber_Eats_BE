@@ -16,6 +16,7 @@ import { Restaurant } from './entities/restaurants.entity';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
+import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -143,6 +144,12 @@ export class RestaurantService {
         take: limit,
         skip: (page - 1) * limit,
       });
+      if (!restaurants) {
+        return {
+          ok: false,
+          error: 'Restaurants not found',
+        };
+      }
       const totalResults = await this.countRestaurants(category);
       return {
         ok: true,
@@ -168,6 +175,12 @@ export class RestaurantService {
         take: limit,
         skip: (page - 1) * limit,
       });
+      if (!restaurants) {
+        return {
+          ok: false,
+          error: 'Restaurants not found',
+        };
+      }
       return {
         ok: true,
         restaurants,
@@ -178,6 +191,29 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not load restaurants',
+      };
+    }
+  }
+
+  async findRestaurantById({
+    restaurantId,
+  }: RestaurantInput): Promise<RestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOneBy({ id: restaurantId });
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found',
+        };
+      }
+      return {
+        ok: true,
+        restaurant,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find restaurant',
       };
     }
   }
