@@ -12,11 +12,11 @@ export class RestaurantRepository extends Repository<Restaurant> {
   }
 
   async findAndCheck(
-    id: number,
+    restaurantId: number,
     owner: User,
     usage: string,
   ): Promise<Restaurant | EditRestaurantOutput | DeleteRestaurantOutput> {
-    const restaurant = await this.findOneBy({ id });
+    const restaurant = await this.findOneBy({ id: restaurantId });
     if (!restaurant) {
       return {
         ok: false,

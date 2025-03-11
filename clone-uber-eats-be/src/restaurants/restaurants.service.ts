@@ -21,19 +21,19 @@ import {
   SearchRestaurantInput,
   SearchRestaurantOutput,
 } from './dtos/search-restaurant.dto';
-import { ILike, Repository } from 'typeorm';
+import { ILike } from 'typeorm';
 import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
-import { Dish } from './entities/dish.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { EditDishInput, EditDishOutput } from './dtos/edit-dish.dto';
+import { DeleteDishInput, DeleteDishOutput } from './dtos/delete-dish.dto';
+import { DishRepository } from './repositories/dish.repository';
+import { Dish } from './entities/dish.entity';
 
 @Injectable()
 export class RestaurantService {
   constructor(
     private readonly restaurants: RestaurantRepository,
     private readonly categories: CategoryRepository,
-    @InjectRepository(Dish)
-    private readonly dishes: Repository<Dish>,
+    private readonly dishes: DishRepository,
   ) {}
 
   async createRestaurant(
@@ -295,21 +295,13 @@ export class RestaurantService {
     editDishInput: EditDishInput,
   ): Promise<EditDishOutput> {
     try {
-      const dish = await this.dishes.findOne({
-        where: { id: editDishInput.dishId },
-        relations: ['restaurant'],
-      });
-      if (!dish) {
-        return {
-          ok: false,
-          error: 'Dish not found',
-        };
-      }
-      if (dish.restaurant.ownerId !== owner.id) {
-        return {
-          ok: false,
-          error: "You cannot edit a dish to a restaurant that you don't own",
-        };
+      const dish = await this.dishes.findAndCheck(
+        editDishInput.dishId,
+        owner,
+        'edit',
+      );
+      if (!(dish instanceof Dish)) {
+        return dish;
       }
       await this.dishes.save({
         id: editDishInput.dishId,
@@ -322,6 +314,27 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not edit dish',
+      };
+    }
+  }
+
+  async deleteDish(
+    owner: User,
+    { dishId }: DeleteDishInput,
+  ): Promise<DeleteDishOutput> {
+    try {
+      const dish = await this.dishes.findAndCheck(dishId, owner, 'delete');
+      if (!(dish instanceof Dish)) {
+        return dish;
+      }
+      await this.dishes.delete({ id: dishId });
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not delete dish',
       };
     }
   }
