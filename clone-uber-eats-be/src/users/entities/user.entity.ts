@@ -9,7 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { CoreEntity } from 'src/common/entites/core.entity';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
-import { Restaurant } from 'src/restaurants/entities/restaurants.entity';
+import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 
 export enum UserRole {
   Client = 'Client',

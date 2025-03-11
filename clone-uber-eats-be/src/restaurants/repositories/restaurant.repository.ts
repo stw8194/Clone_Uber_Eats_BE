@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { Restaurant } from '../entities/restaurants.entity';
+import { Restaurant } from '../entities/restaurant.entity';
 import { User } from 'src/users/entities/user.entity';
 import { EditRestaurantOutput } from '../dtos/edit-restaurant.dto';
 import { DeleteRestaurantOutput } from '../dtos/delete-restaurant.dto';
