@@ -17,6 +17,11 @@ import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
 import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
+import {
+  SearchRestaurantInput,
+  SearchRestaurantOutput,
+} from './dtos/search-restaurant.dto';
+import { ILike } from 'typeorm';
 
 @Injectable()
 export class RestaurantService {
@@ -214,6 +219,37 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not find restaurant',
+      };
+    }
+  }
+
+  async searchRestaurantByName({
+    page,
+    limit,
+    query,
+  }: SearchRestaurantInput): Promise<SearchRestaurantOutput> {
+    try {
+      const [restaurants, totalResults] = await this.restaurants.findAndCount({
+        where: { name: ILike(`%${query}%`) },
+        take: limit,
+        skip: (page - 1) * limit,
+      });
+      if (!restaurants) {
+        return {
+          ok: false,
+          error: 'Restaurants not found',
+        };
+      }
+      return {
+        ok: true,
+        restaurants,
+        totalPages: Math.ceil(totalResults / limit),
+        totalResults,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not search restaurants',
       };
     }
   }
