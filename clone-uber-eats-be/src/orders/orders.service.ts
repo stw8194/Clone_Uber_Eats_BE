@@ -3,10 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
-import { User } from 'src/users/entities/user.entity';
+import { User, UserRole } from 'src/users/entities/user.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Dish } from 'src/restaurants/entities/dish.entity';
+import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 
 @Injectable()
 export class OrderService {
@@ -18,7 +19,7 @@ export class OrderService {
     @InjectRepository(Dish)
     private readonly dishes: Repository<Dish>,
     @InjectRepository(Restaurant)
-    private readonly restaurant: Repository<Restaurant>,
+    private readonly restaurants: Repository<Restaurant>,
   ) {}
 
   async createOrder(
@@ -26,7 +27,7 @@ export class OrderService {
     { restaurantId, items }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
-      const restaurant = await this.restaurant.findOne({
+      const restaurant = await this.restaurants.findOne({
         where: { id: restaurantId },
       });
       if (!restaurant) {
@@ -86,6 +87,50 @@ export class OrderService {
       return {
         ok: false,
         error: 'Could not create order',
+      };
+    }
+  }
+
+  async getOrders(
+    user: User,
+    { status }: GetOrdersInput,
+  ): Promise<GetOrdersOutput> {
+    try {
+      let orders: Order[];
+      if (user.role === UserRole.Client) {
+        orders = await this.orders.find({
+          where: {
+            customer: user,
+            status,
+          },
+        });
+      } else if (user.role === UserRole.Delivery) {
+        orders = await this.orders.find({
+          where: {
+            driver: user,
+            status,
+          },
+        });
+      } else if (user.role === UserRole.Owner) {
+        const restaurants = await this.restaurants.find({
+          where: {
+            owner: { id: user.id },
+          },
+          relations: ['orders'],
+        });
+        orders = restaurants.map((restaurant) => restaurant.orders).flat(1);
+        if (status) {
+          orders = orders.filter((order) => order.status === status);
+        }
+      }
+      return {
+        ok: true,
+        orders,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not get orders',
       };
     }
   }

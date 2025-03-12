@@ -30,8 +30,8 @@ export class UserResolver {
 
   @Query((returns) => User)
   @Role(['Any'])
-  me(@AuthUser() loggedInUser: User): User {
-    return loggedInUser;
+  me(@AuthUser() user: User): User {
+    return user;
   }
 
   @Query((returns) => UserProfileOutput)
@@ -45,10 +45,10 @@ export class UserResolver {
   @Mutation((returns) => EditProfileOutput)
   @Role(['Any'])
   editProfile(
-    @AuthUser() loggedInUser: User,
+    @AuthUser() user: User,
     @Args('input') editProfileInput: EditProfileInput,
   ): Promise<EditProfileOutput> {
-    return this.userService.editProfile(loggedInUser.id, editProfileInput);
+    return this.userService.editProfile(user.id, editProfileInput);
   }
 
   @Mutation((returns) => VerifyEmailOutput)
