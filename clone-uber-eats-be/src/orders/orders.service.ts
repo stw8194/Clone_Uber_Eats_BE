@@ -8,6 +8,7 @@ import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
+import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 
 @Injectable()
 export class OrderService {
@@ -131,6 +132,51 @@ export class OrderService {
       return {
         ok: false,
         error: 'Could not get orders',
+      };
+    }
+  }
+
+  async getOrder(
+    user: User,
+    { id: orderId }: GetOrderInput,
+  ): Promise<GetOrderOutput> {
+    try {
+      const order = await this.orders.findOne({
+        where: { id: orderId },
+        relations: ['restaurant'],
+      });
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      let allowed = true;
+      switch (user.role) {
+        case UserRole.Client:
+          if (order.customerId !== user.id) allowed = false;
+          break;
+        case UserRole.Delivery:
+          if (order.driverId !== user.id) allowed = false;
+          break;
+        case UserRole.Owner:
+          if (order.restaurant.ownerId !== user.id) allowed = false;
+          break;
+      }
+      if (!allowed) {
+        return {
+          ok: false,
+          error: 'You cannot see that',
+        };
+      }
+      return {
+        ok: true,
+        order,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not get order',
       };
     }
   }
