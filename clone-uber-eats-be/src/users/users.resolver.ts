@@ -13,7 +13,7 @@ import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
 import { Role } from 'src/auth/role.decorator';
 
 @Resolver((of) => User)
-export class UsersResolver {
+export class UserResolver {
   constructor(private readonly userService: UserService) {}
 
   @Mutation((returns) => CreateAccountOutput)

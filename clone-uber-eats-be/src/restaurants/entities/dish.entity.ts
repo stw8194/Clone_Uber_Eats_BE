@@ -7,9 +7,9 @@ import { Order } from 'src/orders/entities/order.entity';
 
 @InputType('DishChoiceInputType')
 @ObjectType()
-class DishChoice {
+export class DishChoice {
   @Field((type) => String)
-  name?: string;
+  name: string;
 
   @Field((type) => Number, { nullable: true })
   extra?: number;
@@ -17,7 +17,7 @@ class DishChoice {
 
 @InputType('DishOptionInputType')
 @ObjectType()
-class DishOption {
+export class DishOption {
   @Field((type) => String)
   name: string;
 
@@ -32,7 +32,7 @@ class DishOption {
 @ObjectType()
 @Entity()
 export class Dish extends CoreEntity {
-  @Column({ unique: true })
+  @Column()
   @Field((type) => String)
   @IsString()
   name: string;
