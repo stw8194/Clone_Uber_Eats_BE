@@ -100,4 +100,13 @@ export class OrderResolver {
   orderUpdates(@Args('input') OrderUpdatesInput: OrderUpdatesInput) {
     return this.pubSub.asyncIterableIterator(NEW_ORDER_UPDATES);
   }
+
+  @Mutation((returns) => TakeOrderOutput)
+  @Role(['Delivery'])
+  takeOrder(
+    @AuthUser() driver: User,
+    @Args('input') takeOrderInput: TakeOrderInput,
+  ): Promise<TakeOrderOutput> {
+    return this.orderService.takeOrder(driver, takeOrderInput);
+  }
 }

@@ -254,4 +254,40 @@ export class OrderService {
       };
     }
   }
+
+  async takeOrder(
+    driver: User,
+    { id: orderId }: TakeOrderInput,
+  ): Promise<TakeOrderOutput> {
+    try {
+      const order = await this.orders.findOneBy({ id: orderId });
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      if (order.driver) {
+        return {
+          ok: false,
+          error: 'This order already has a driver',
+        };
+      }
+      await this.orders.save({
+        id: orderId,
+        driver,
+      });
+      await this.pubSub.publish(NEW_ORDER_UPDATES, {
+        orderUpdates: { ...order, driver },
+      });
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not take order',
+      };
+    }
+  }
 }
