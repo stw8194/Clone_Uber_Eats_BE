@@ -224,7 +224,7 @@ export class OrderService {
       if (!canEdit) {
         return {
           ok: false,
-          error: 'You cannot edit that',
+          error: 'You cannot do that',
         };
       }
       await this.orders.save({ id: orderId, status });
