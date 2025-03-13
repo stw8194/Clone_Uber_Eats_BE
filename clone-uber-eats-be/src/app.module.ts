@@ -18,6 +18,7 @@ import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
 import { Context } from 'graphql-ws';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -63,11 +64,7 @@ import { Context } from 'graphql-ws';
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       subscriptions: {
-        'graphql-ws': {
-          onConnect: ({ connectionParams }: Context<any>) => {
-            return connectionParams;
-          },
-        },
+        'graphql-ws': true,
       },
       driver: ApolloDriver,
       autoSchemaFile: true,
@@ -80,6 +77,7 @@ import { Context } from 'graphql-ws';
         };
       },
     }),
+    CommonModule,
     AuthModule,
     UsersModule,
     RestaurantsModule,
