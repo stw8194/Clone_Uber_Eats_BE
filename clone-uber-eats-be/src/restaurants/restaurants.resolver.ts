@@ -64,11 +64,11 @@ export class RestaurantResolver {
   @Mutation((returns) => DeleteRestaurantOutput)
   @Role(['Any'])
   deleteRestaurant(
-    @AuthUser() loggedInUser: User,
+    @AuthUser() user: User,
     @Args() deleteRestaurantInput: DeleteRestaurantInput,
   ): Promise<DeleteRestaurantOutput> {
     return this.restaurantService.deleteRestaurant(
-      loggedInUser,
+      user,
       deleteRestaurantInput.restaurantId,
     );
   }

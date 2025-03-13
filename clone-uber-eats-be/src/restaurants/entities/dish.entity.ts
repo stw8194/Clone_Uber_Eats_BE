@@ -7,7 +7,7 @@ import { Order } from 'src/orders/entities/order.entity';
 
 @InputType('DishOptionInputType')
 @ObjectType()
-class DishOption {
+export class DishOption {
   @Field((type) => String)
   name: string;
 
@@ -22,7 +22,7 @@ class DishOption {
 @ObjectType()
 @Entity()
 export class Dish extends CoreEntity {
-  @Column({ unique: true })
+  @Column()
   @Field((type) => String)
   @IsString()
   name: string;
