@@ -11,7 +11,6 @@ import { CategoryRepository } from './repositories/category.repository';
 import { Category } from './entities/category.entity';
 import { RestaurantRepository } from './repositories/restaurant.repository';
 import { Dish } from './entities/dish.entity';
-import { DishRepository } from './repositories/dish.repository';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Restaurant, Category, Dish])],
@@ -22,7 +21,6 @@ import { DishRepository } from './repositories/dish.repository';
     RestaurantService,
     RestaurantRepository,
     CategoryRepository,
-    DishRepository,
   ],
 })
 export class RestaurantsModule {}
