@@ -100,7 +100,7 @@ export class UserService {
   ): Promise<EditProfileOutput> {
     try {
       const user = await this.users.findOneBy({ id: userId });
-      if (email == user.email) throw new Error();
+      if (email && email == user.email) throw new Error();
       if (email) {
         user.email = email;
         user.verified = false;

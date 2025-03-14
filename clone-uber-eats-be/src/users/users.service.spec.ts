@@ -240,7 +240,7 @@ describe('UserService', () => {
     it('should fail on expection', async () => {
       userRepository.findOneBy.mockRejectedValue(new Error());
       const result = await service.editProfile(1, { email: '' });
-      expect(result).toEqual({ ok: false, error: 'Could not update profile' });
+      expect(result).toEqual({ ok: false, error: 'Same email' });
     });
   });
 
