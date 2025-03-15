@@ -119,6 +119,7 @@ export class RestaurantService {
   async allCategories(): Promise<AllCategoriesOutput> {
     try {
       const categories = await this.categories.find();
+      console.log(categories);
       return {
         ok: true,
         categories,

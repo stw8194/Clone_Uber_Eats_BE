@@ -220,7 +220,30 @@ describe('RestaurantService', () => {
       });
     });
   });
-  it.todo('allCategories');
+
+  describe('allCategories', () => {
+    it('should show all categories', async () => {
+      const categoryArgs = {
+        name: '',
+      };
+      categoryRepository.find.mockResolvedValue(categoryArgs);
+      const result = await service.allCategories();
+
+      expect(categoryRepository.find).toHaveBeenCalledTimes(1);
+      expect(categoryRepository.find).toHaveBeenCalledWith();
+      expect(result).toEqual({ ok: true, categories: categoryArgs });
+    });
+
+    it('fail on exception', async () => {
+      categoryRepository.find.mockRejectedValue(new Error());
+      const result = await service.allCategories();
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not load categories',
+      });
+    });
+  });
+
   it.todo('countRestaurants');
   it.todo('findCategoryBySlug');
   it.todo('allRestaurants');
