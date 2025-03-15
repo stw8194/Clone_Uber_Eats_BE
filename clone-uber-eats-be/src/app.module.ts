@@ -69,11 +69,9 @@ import { CommonModule } from './common/common.module';
       driver: ApolloDriver,
       autoSchemaFile: true,
       context: ({ req, connectionParams }) => {
-        const TOKEN_KEY = 'X-JWT';
+        const TOKEN_KEY = 'x-jwt';
         return {
-          token: req
-            ? req.body.variables[TOKEN_KEY]
-            : connectionParams[TOKEN_KEY],
+          token: req ? req.headers[TOKEN_KEY] : connectionParams[TOKEN_KEY],
         };
       },
     }),
