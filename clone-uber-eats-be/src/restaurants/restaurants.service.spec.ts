@@ -66,6 +66,7 @@ describe('RestaurantService', () => {
   restaurantArgs.name = '';
   restaurantArgs.coverImg = '';
   restaurantArgs.address = '';
+  restaurantArgs.ownerId = 1;
 
   const restaurantsArgs = [
     {
@@ -247,7 +248,7 @@ describe('RestaurantService', () => {
       limit: 1,
     };
     it('should fail if category not found', async () => {
-      categoryRepository.findOne.mockResolvedValue(null);
+      categoryRepository.findOne.mockResolvedValue(undefined);
 
       const result = await service.findCategoryBySlug(findCategoryArgs);
 
@@ -264,7 +265,7 @@ describe('RestaurantService', () => {
 
     it('should fail if restaurants not found', async () => {
       categoryRepository.findOne.mockResolvedValue(categoryArgs);
-      restaurantRepository.find.mockResolvedValue(null);
+      restaurantRepository.find.mockResolvedValue(undefined);
 
       const result = await service.findCategoryBySlug(findCategoryArgs);
 
@@ -318,7 +319,10 @@ describe('RestaurantService', () => {
       limit: 1,
     };
     it('should fail if restaurants not found', async () => {
-      restaurantRepository.findAndCount.mockResolvedValue([null, null]);
+      restaurantRepository.findAndCount.mockResolvedValue([
+        undefined,
+        undefined,
+      ]);
       const result = await service.allRestaurants(findRestaurantsArgs);
 
       expect(restaurantRepository.findAndCount).toHaveBeenCalledTimes(1);
@@ -362,7 +366,7 @@ describe('RestaurantService', () => {
       restaurantId: 1,
     };
     it('should fail if restaurant not found', async () => {
-      restaurantRepository.findOne.mockResolvedValue(null);
+      restaurantRepository.findOne.mockResolvedValue(undefined);
       const result = await service.findRestaurantById(findRestaurantArgs);
 
       expect(restaurantRepository.findOne).toHaveBeenCalledTimes(1);
@@ -403,7 +407,10 @@ describe('RestaurantService', () => {
       query: 'query',
     };
     it('should fail if restaurants not found', async () => {
-      restaurantRepository.findAndCount.mockResolvedValue([null, null]);
+      restaurantRepository.findAndCount.mockResolvedValue([
+        undefined,
+        undefined,
+      ]);
       const result = await service.searchRestaurantByName(searchRestaurantArgs);
 
       expect(restaurantRepository.findAndCount).toHaveBeenCalledTimes(1);
@@ -434,7 +441,7 @@ describe('RestaurantService', () => {
     });
 
     it('fail on exception', async () => {
-      categoryRepository.findAndCount.mockRejectedValue(new Error());
+      restaurantRepository.findAndCount.mockRejectedValue(new Error());
       const result = await service.searchRestaurantByName(searchRestaurantArgs);
       expect(result).toEqual({
         ok: false,
@@ -490,5 +497,71 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('editDish');
+  describe('editDish', () => {
+    const editDishArgs = {
+      dishId: 1,
+      name: 'new',
+    };
+    const dishArgs = {
+      name: 'name',
+      price: 0,
+      description: 'description',
+      restaurantId: 1,
+      restaurant: restaurantArgs,
+    };
+
+    it('should fail if dish not found', async () => {
+      dishRepository.findOne.mockResolvedValue(undefined);
+      const result = await service.editDish(ownerArgs, editDishArgs);
+
+      expect(dishRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(dishRepository.findOne).toHaveBeenCalledWith({
+        where: { id: editDishArgs.dishId },
+        relations: ['restaurant'],
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Dish not found',
+      });
+    });
+
+    it('should fail if anyone other than the owner tries to edit', async () => {
+      const notOwnerArgs = {
+        id: 2,
+        email: '',
+        role: UserRole.Owner,
+        verified: true,
+      } as User;
+      dishRepository.findOne.mockResolvedValue(dishArgs);
+      const result = await service.editDish(notOwnerArgs, editDishArgs);
+
+      expect(result).toEqual({
+        ok: false,
+        error: "You cannot edit a dish to a restaurant that you don't own",
+      });
+    });
+
+    it('should edit dish', async () => {
+      dishRepository.findOne.mockResolvedValue(dishArgs);
+      const result = await service.editDish(ownerArgs, editDishArgs);
+
+      expect(dishRepository.save).toHaveBeenCalledTimes(1);
+      expect(dishRepository.save).toHaveBeenCalledWith({
+        id: editDishArgs.dishId,
+        ...editDishArgs,
+      });
+      expect(result).toEqual({
+        ok: true,
+      });
+    });
+
+    it('fail on exception', async () => {
+      dishRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.editDish(ownerArgs, editDishArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not edit dish',
+      });
+    });
+  });
 });

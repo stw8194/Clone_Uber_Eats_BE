@@ -85,7 +85,7 @@ describe('UserService', () => {
     });
 
     it('should create a new user', async () => {
-      userRepository.findOneBy.mockResolvedValue(null);
+      userRepository.findOneBy.mockResolvedValue(undefined);
       userRepository.create.mockReturnValue(createAccountArgs);
       userRepository.save.mockResolvedValue(createAccountArgs);
       verificationRepository.create.mockReturnValue(createAccountArgs);
@@ -121,7 +121,7 @@ describe('UserService', () => {
   describe('login', () => {
     const loginArgs = { email: '', password: '' };
     it('should fail if user does not exist', async () => {
-      userRepository.findOne.mockResolvedValue(null);
+      userRepository.findOne.mockResolvedValue(undefined);
 
       const result = await service.login(loginArgs);
 
