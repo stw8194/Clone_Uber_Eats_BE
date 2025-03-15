@@ -443,6 +443,52 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('createDish');
+  describe('createDish', () => {
+    const createDishArgs = {
+      name: 'name',
+      price: 0,
+      description: 'description',
+      restaurantId: 1,
+    };
+
+    it('should create dish', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
+      dishRepository.create.mockReturnValue({
+        ...createDishArgs,
+        restaurant: restaurantArgs,
+      });
+      const result = await service.createDish(ownerArgs, createDishArgs);
+
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
+        createDishArgs.restaurantId,
+        ownerArgs,
+        'create a dish to',
+      );
+      expect(dishRepository.create).toHaveBeenCalledTimes(1);
+      expect(dishRepository.create).toHaveBeenCalledWith({
+        ...createDishArgs,
+        restaurant: restaurantArgs,
+      });
+      expect(dishRepository.save).toHaveBeenCalledTimes(1);
+      expect(dishRepository.save).toHaveBeenCalledWith({
+        ...createDishArgs,
+        restaurant: restaurantArgs,
+      });
+      expect(result).toEqual({
+        ok: true,
+      });
+    });
+
+    it('should fail on exception', async () => {
+      restaurantRepository.findAndCheck.mockRejectedValue(new Error());
+      const result = await service.createDish(ownerArgs, createDishArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not create dish',
+      });
+    });
+  });
+
   it.todo('editDish');
 });
