@@ -141,9 +141,7 @@ export class RestaurantService {
     limit,
   }: CategoryInput): Promise<CategoryOutput> {
     try {
-      console.log(1);
       const category = await this.categories.findOne({ where: { slug } });
-      console.log(12352);
       if (!category) {
         return {
           ok: false,
@@ -182,10 +180,12 @@ export class RestaurantService {
     limit,
   }: RestaurantsInput): Promise<RestaurantsOutput> {
     try {
+      console.log(2);
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         take: limit,
         skip: (page - 1) * limit,
       });
+      console.log(1);
       if (!restaurants) {
         return {
           ok: false,

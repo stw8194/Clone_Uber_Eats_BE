@@ -312,12 +312,14 @@ describe('RestaurantService', () => {
         category: { id: categoryArgs.id },
       });
 
+      const totalResults = restaurantsArgs.length;
+
       expect(result).toEqual({
         ok: true,
         category: categoryArgs,
         restaurants: restaurantsArgs,
-        totalPages: Math.ceil(2 / findCategoryArgs.limit),
-        totalResults: 2,
+        totalPages: Math.ceil(totalResults / findCategoryArgs.limit),
+        totalResults,
       });
     });
 
@@ -331,7 +333,62 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('allRestaurants');
+  describe('allRestaurants', () => {
+    const findRestaurantsArgs = {
+      page: 1,
+      limit: 1,
+    };
+    const restaurantsArgs = [
+      {
+        id: 1,
+        name: 'restaurant1',
+      },
+      {
+        id: 2,
+        name: 'restaurant2',
+      },
+    ];
+    it('should fail if restaurants not found', async () => {
+      restaurantRepository.findAndCount.mockResolvedValue([null, null]);
+      const result = await service.allRestaurants(findRestaurantsArgs);
+
+      expect(restaurantRepository.findAndCount).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findAndCount).toHaveBeenCalledWith({
+        take: findRestaurantsArgs.limit,
+        skip: (findRestaurantsArgs.page - 1) * findRestaurantsArgs.limit,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Restaurants not found',
+      });
+    });
+
+    it('should show all restaurants', async () => {
+      const totalResults = restaurantsArgs.length;
+      restaurantRepository.findAndCount.mockResolvedValue([
+        restaurantsArgs,
+        totalResults,
+      ]);
+      const result = await service.allRestaurants(findRestaurantsArgs);
+
+      expect(result).toEqual({
+        ok: true,
+        restaurants: restaurantsArgs,
+        totalPages: Math.ceil(totalResults / findRestaurantsArgs.limit),
+        totalResults,
+      });
+    });
+
+    it('fail on exception', async () => {
+      restaurantRepository.findAndCount.mockRejectedValue(new Error());
+      const result = await service.allRestaurants(findRestaurantsArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not load restaurants',
+      });
+    });
+  });
+
   it.todo('findRestaurantById');
   it.todo('searchRestaurantByName');
   it.todo('createDish');
