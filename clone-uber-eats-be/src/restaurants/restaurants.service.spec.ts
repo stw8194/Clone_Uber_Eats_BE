@@ -5,7 +5,7 @@ import { User, UserRole } from 'src/users/entities/user.entity';
 import { RestaurantRepository } from './repositories/restaurant.repository';
 import { CategoryRepository } from './repositories/category.repository';
 import { Dish } from './entities/dish.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
 
 const mockRepository = () => ({
@@ -54,6 +54,38 @@ describe('RestaurantService', () => {
     dishRepository = module.get(getRepositoryToken(Dish));
   });
 
+  const ownerArgs = {
+    id: 1,
+    email: '',
+    role: UserRole.Owner,
+    verified: true,
+  } as User;
+
+  const restaurantArgs = new Restaurant();
+  restaurantArgs.id = 1;
+  restaurantArgs.name = '';
+  restaurantArgs.coverImg = '';
+  restaurantArgs.address = '';
+
+  const restaurantsArgs = [
+    {
+      id: 1,
+      name: 'restaurant1',
+    },
+    {
+      id: 2,
+      name: 'restaurant2',
+    },
+  ];
+
+  const totalResults = restaurantsArgs.length;
+
+  const categoryArgs = {
+    id: 1,
+    slug: 'categorySlug',
+    name: 'categoryName',
+  };
+
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
@@ -64,16 +96,6 @@ describe('RestaurantService', () => {
       coverImg: '',
       address: '',
       categoryName: '',
-    };
-    const ownerArgs = {
-      id: 1,
-      email: '',
-      role: UserRole.Owner,
-      verified: true,
-    } as User;
-    const categoryArgs = {
-      slug: 'categorySlug',
-      name: 'categoryName',
     };
 
     it('should create a new restaurant', async () => {
@@ -123,21 +145,6 @@ describe('RestaurantService', () => {
       name: 'new',
       categoryName: 'new',
     };
-    const restaurantArgs = new Restaurant();
-    restaurantArgs.id = 1;
-    restaurantArgs.name = '';
-    restaurantArgs.coverImg = '';
-    restaurantArgs.address = '';
-    const ownerArgs = {
-      id: 1,
-      email: '',
-      role: UserRole.Owner,
-      verified: true,
-    } as User;
-    const categoryArgs = {
-      slug: 'categorySlug',
-      name: 'categoryName',
-    };
 
     it('should edit restaurant', async () => {
       restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
@@ -180,14 +187,6 @@ describe('RestaurantService', () => {
   });
 
   describe('deleteRestaurant', () => {
-    const restaurantArgs = new Restaurant();
-    restaurantArgs.id = 1;
-    const ownerArgs = {
-      id: 1,
-      email: '',
-      role: UserRole.Owner,
-      verified: true,
-    } as User;
     it('should delete restaurant', async () => {
       restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
       const result = await service.deleteRestaurant(
@@ -223,9 +222,6 @@ describe('RestaurantService', () => {
 
   describe('allCategories', () => {
     it('should show all categories', async () => {
-      const categoryArgs = {
-        name: '',
-      };
       categoryRepository.find.mockResolvedValue(categoryArgs);
       const result = await service.allCategories();
 
@@ -250,21 +246,6 @@ describe('RestaurantService', () => {
       page: 1,
       limit: 1,
     };
-    const categoryArgs = {
-      id: 1,
-      slug: 'categorySlug',
-      name: 'categoryName',
-    };
-    const restaurantsArgs = [
-      {
-        id: 1,
-        name: 'restaurant1',
-      },
-      {
-        id: 2,
-        name: 'restaurant2',
-      },
-    ];
     it('should fail if category not found', async () => {
       categoryRepository.findOne.mockResolvedValue(null);
 
@@ -312,8 +293,6 @@ describe('RestaurantService', () => {
         category: { id: categoryArgs.id },
       });
 
-      const totalResults = restaurantsArgs.length;
-
       expect(result).toEqual({
         ok: true,
         category: categoryArgs,
@@ -338,16 +317,6 @@ describe('RestaurantService', () => {
       page: 1,
       limit: 1,
     };
-    const restaurantsArgs = [
-      {
-        id: 1,
-        name: 'restaurant1',
-      },
-      {
-        id: 2,
-        name: 'restaurant2',
-      },
-    ];
     it('should fail if restaurants not found', async () => {
       restaurantRepository.findAndCount.mockResolvedValue([null, null]);
       const result = await service.allRestaurants(findRestaurantsArgs);
@@ -364,7 +333,6 @@ describe('RestaurantService', () => {
     });
 
     it('should show all restaurants', async () => {
-      const totalResults = restaurantsArgs.length;
       restaurantRepository.findAndCount.mockResolvedValue([
         restaurantsArgs,
         totalResults,
@@ -392,10 +360,6 @@ describe('RestaurantService', () => {
   describe('findRestaurantById', () => {
     const findRestaurantArgs = {
       restaurantId: 1,
-    };
-    const restaurantArgs = {
-      id: 1,
-      name: 'restaurant',
     };
     it('should fail if restaurant not found', async () => {
       restaurantRepository.findOne.mockResolvedValue(null);
@@ -432,7 +396,53 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('searchRestaurantByName');
+  describe('searchRestaurantByName', () => {
+    const searchRestaurantArgs = {
+      page: 1,
+      limit: 1,
+      query: 'query',
+    };
+    it('should fail if restaurants not found', async () => {
+      restaurantRepository.findAndCount.mockResolvedValue([null, null]);
+      const result = await service.searchRestaurantByName(searchRestaurantArgs);
+
+      expect(restaurantRepository.findAndCount).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findAndCount).toHaveBeenCalledWith({
+        where: { name: ILike(`%${searchRestaurantArgs.query}%`) },
+        take: searchRestaurantArgs.limit,
+        skip: (searchRestaurantArgs.page - 1) * searchRestaurantArgs.limit,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Restaurants not found',
+      });
+    });
+
+    it('should search restaurant by name', async () => {
+      restaurantRepository.findAndCount.mockResolvedValue([
+        restaurantArgs,
+        totalResults,
+      ]);
+      const result = await service.searchRestaurantByName(searchRestaurantArgs);
+
+      expect(result).toEqual({
+        ok: true,
+        restaurants: restaurantArgs,
+        totalPages: Math.ceil(totalResults / searchRestaurantArgs.limit),
+        totalResults,
+      });
+    });
+
+    it('fail on exception', async () => {
+      categoryRepository.findAndCount.mockRejectedValue(new Error());
+      const result = await service.searchRestaurantByName(searchRestaurantArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not search restaurants',
+      });
+    });
+  });
+
   it.todo('createDish');
   it.todo('editDish');
 });
