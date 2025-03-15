@@ -389,7 +389,49 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('findRestaurantById');
+  describe('findRestaurantById', () => {
+    const findRestaurantArgs = {
+      restaurantId: 1,
+    };
+    const restaurantArgs = {
+      id: 1,
+      name: 'restaurant',
+    };
+    it('should fail if restaurant not found', async () => {
+      restaurantRepository.findOne.mockResolvedValue(null);
+      const result = await service.findRestaurantById(findRestaurantArgs);
+
+      expect(restaurantRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findOne).toHaveBeenCalledWith({
+        where: { id: findRestaurantArgs.restaurantId },
+        relations: ['menu'],
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Restaurant not found',
+      });
+    });
+
+    it('should find restaurant by id', async () => {
+      restaurantRepository.findOne.mockResolvedValue(restaurantArgs);
+      const result = await service.findRestaurantById(findRestaurantArgs);
+
+      expect(result).toEqual({
+        ok: true,
+        restaurant: restaurantArgs,
+      });
+    });
+
+    it('fail on exception', async () => {
+      restaurantRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.findRestaurantById(findRestaurantArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not find restaurant',
+      });
+    });
+  });
+
   it.todo('searchRestaurantByName');
   it.todo('createDish');
   it.todo('editDish');

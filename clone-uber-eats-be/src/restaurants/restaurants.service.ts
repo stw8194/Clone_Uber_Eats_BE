@@ -180,12 +180,10 @@ export class RestaurantService {
     limit,
   }: RestaurantsInput): Promise<RestaurantsOutput> {
     try {
-      console.log(2);
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         take: limit,
         skip: (page - 1) * limit,
       });
-      console.log(1);
       if (!restaurants) {
         return {
           ok: false,
