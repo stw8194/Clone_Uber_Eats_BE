@@ -244,8 +244,93 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('countRestaurants');
-  it.todo('findCategoryBySlug');
+  describe('findCategoryBySlug', () => {
+    const findCategoryArgs = {
+      slug: 'slug',
+      page: 1,
+      limit: 1,
+    };
+    const categoryArgs = {
+      id: 1,
+      slug: 'categorySlug',
+      name: 'categoryName',
+    };
+    const restaurantsArgs = [
+      {
+        id: 1,
+        name: 'restaurant1',
+      },
+      {
+        id: 2,
+        name: 'restaurant2',
+      },
+    ];
+    it('should fail if category not found', async () => {
+      categoryRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.findCategoryBySlug(findCategoryArgs);
+
+      expect(categoryRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(categoryRepository.findOne).toHaveBeenCalledWith({
+        where: { slug: findCategoryArgs.slug },
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Category not found',
+      });
+    });
+
+    it('should fail if restaurants not found', async () => {
+      categoryRepository.findOne.mockResolvedValue(categoryArgs);
+      restaurantRepository.find.mockResolvedValue(null);
+
+      const result = await service.findCategoryBySlug(findCategoryArgs);
+
+      expect(restaurantRepository.find).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.find).toHaveBeenCalledWith({
+        where: { category: { id: categoryArgs.id } },
+        take: findCategoryArgs.limit,
+        skip: (findCategoryArgs.page - 1) * findCategoryArgs.limit,
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Restaurants not found',
+      });
+    });
+
+    it('should find category by slug', async () => {
+      categoryRepository.findOne.mockResolvedValue(categoryArgs);
+      restaurantRepository.find.mockResolvedValue(restaurantsArgs);
+      restaurantRepository.countBy.mockResolvedValue(2);
+
+      const result = await service.findCategoryBySlug(findCategoryArgs);
+
+      expect(restaurantRepository.countBy).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.countBy).toHaveBeenCalledWith({
+        category: { id: categoryArgs.id },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        category: categoryArgs,
+        restaurants: restaurantsArgs,
+        totalPages: Math.ceil(2 / findCategoryArgs.limit),
+        totalResults: 2,
+      });
+    });
+
+    it('fail on exception', async () => {
+      categoryRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.findCategoryBySlug(findCategoryArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not load category',
+      });
+    });
+  });
+
   it.todo('allRestaurants');
   it.todo('findRestaurantById');
   it.todo('searchRestaurantByName');

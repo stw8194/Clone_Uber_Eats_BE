@@ -119,7 +119,6 @@ export class RestaurantService {
   async allCategories(): Promise<AllCategoriesOutput> {
     try {
       const categories = await this.categories.find();
-      console.log(categories);
       return {
         ok: true,
         categories,
@@ -142,7 +141,9 @@ export class RestaurantService {
     limit,
   }: CategoryInput): Promise<CategoryOutput> {
     try {
+      console.log(1);
       const category = await this.categories.findOne({ where: { slug } });
+      console.log(12352);
       if (!category) {
         return {
           ok: false,
