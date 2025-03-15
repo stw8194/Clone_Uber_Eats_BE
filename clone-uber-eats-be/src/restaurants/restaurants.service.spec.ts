@@ -6,10 +6,12 @@ import { RestaurantRepository } from './repositories/restaurant.repository';
 import { CategoryRepository } from './repositories/category.repository';
 import { Dish } from './entities/dish.entity';
 import { Repository } from 'typeorm';
+import { Restaurant } from './entities/restaurant.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
   findOne: jest.fn(),
+  findOneBy: jest.fn(),
   findAndCount: jest.fn(),
   findAndCheck: jest.fn(),
   save: jest.fn(),
@@ -28,6 +30,7 @@ describe('RestaurantService', () => {
   let categoryRepository: mockCustumRepository<CategoryRepository>;
   let dishRepository: mockRepository<Dish>;
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module = await Test.createTestingModule({
       providers: [
         RestaurantService,
@@ -72,6 +75,7 @@ describe('RestaurantService', () => {
       slug: 'categorySlug',
       name: 'categoryName',
     };
+
     it('should create a new restaurant', async () => {
       restaurantRepository.create.mockReturnValue({
         ...createRestaurantArgs,
@@ -101,7 +105,7 @@ describe('RestaurantService', () => {
     });
 
     it('should fail on exception', async () => {
-      restaurantRepository.save.mockResolvedValue(new Error());
+      restaurantRepository.save.mockRejectedValue(new Error());
       const result = await service.createRestaurant(
         ownerArgs,
         createRestaurantArgs,
@@ -112,7 +116,70 @@ describe('RestaurantService', () => {
       });
     });
   });
-  it.todo('editRestaurant');
+
+  describe('editRestaurant', () => {
+    const editRestaurantArgs = {
+      restaurantId: 1,
+      name: 'new',
+      categoryName: 'new',
+    };
+    const restaurantArgs = new Restaurant();
+    restaurantArgs.id = 1;
+    restaurantArgs.name = '';
+    restaurantArgs.coverImg = '';
+    restaurantArgs.address = '';
+    const ownerArgs = {
+      id: 1,
+      email: '',
+      role: UserRole.Owner,
+      verified: true,
+    } as User;
+    const categoryArgs = {
+      slug: 'categorySlug',
+      name: 'categoryName',
+    };
+
+    it('should edit restaurant', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
+      categoryRepository.getOrCreate.mockResolvedValue(categoryArgs);
+      const result = await service.editRestaurant(
+        ownerArgs,
+        editRestaurantArgs,
+      );
+
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
+        editRestaurantArgs.restaurantId,
+        ownerArgs,
+        'edit',
+      );
+      expect(categoryRepository.getOrCreate).toHaveBeenCalledTimes(1);
+      expect(categoryRepository.getOrCreate).toHaveBeenCalledWith(
+        editRestaurantArgs.categoryName,
+      );
+      expect(restaurantRepository.save).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.save).toHaveBeenCalledWith({
+        id: editRestaurantArgs.restaurantId,
+        ...editRestaurantArgs,
+        ...(categoryArgs && { category: categoryArgs }),
+      });
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('fail on exception', async () => {
+      restaurantRepository.findAndCheck.mockRejectedValue(new Error());
+      const result = await service.editRestaurant(
+        ownerArgs,
+        editRestaurantArgs,
+      );
+      console.log(result);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not edit restaurant',
+      });
+    });
+  });
+
   it.todo('deleteRestaurant');
   it.todo('allCategories');
   it.todo('countRestaurants');
