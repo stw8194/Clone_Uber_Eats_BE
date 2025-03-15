@@ -99,7 +99,7 @@ export class RestaurantService {
       const restaurant = await this.restaurants.findAndCheck(
         restaurantId,
         owner,
-        'edit',
+        'delete',
       );
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;

@@ -172,7 +172,6 @@ describe('RestaurantService', () => {
         ownerArgs,
         editRestaurantArgs,
       );
-      console.log(result);
       expect(result).toEqual({
         ok: false,
         error: 'Could not edit restaurant',
@@ -180,7 +179,47 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('deleteRestaurant');
+  describe('deleteRestaurant', () => {
+    const restaurantArgs = new Restaurant();
+    restaurantArgs.id = 1;
+    const ownerArgs = {
+      id: 1,
+      email: '',
+      role: UserRole.Owner,
+      verified: true,
+    } as User;
+    it('should delete restaurant', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
+      const result = await service.deleteRestaurant(
+        ownerArgs,
+        restaurantArgs.id,
+      );
+
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
+        restaurantArgs.id,
+        ownerArgs,
+        'delete',
+      );
+      expect(restaurantRepository.delete).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.delete).toHaveBeenCalledWith({
+        id: restaurantArgs.id,
+      });
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('fail on exception', async () => {
+      restaurantRepository.findAndCheck.mockRejectedValue(new Error());
+      const result = await service.deleteRestaurant(
+        ownerArgs,
+        restaurantArgs.id,
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not delete restaurant',
+      });
+    });
+  });
   it.todo('allCategories');
   it.todo('countRestaurants');
   it.todo('findCategoryBySlug');
