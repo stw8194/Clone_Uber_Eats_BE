@@ -174,6 +174,21 @@ describe('RestaurantService', () => {
       expect(result).toEqual({ ok: true });
     });
 
+    it('should fail if restaurant is not instance of Restaurant', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue({
+        ok: false,
+        error: 'error',
+      });
+      const result = await service.editRestaurant(
+        ownerArgs,
+        editRestaurantArgs,
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'error',
+      });
+    });
+
     it('fail on exception', async () => {
       restaurantRepository.findAndCheck.mockRejectedValue(new Error());
       const result = await service.editRestaurant(
@@ -206,6 +221,21 @@ describe('RestaurantService', () => {
         id: restaurantArgs.id,
       });
       expect(result).toEqual({ ok: true });
+    });
+
+    it('should fail if restaurant is not instance of Restaurant', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue({
+        ok: false,
+        error: 'error',
+      });
+      const result = await service.deleteRestaurant(
+        ownerArgs,
+        restaurantArgs.id,
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'error',
+      });
     });
 
     it('fail on exception', async () => {
@@ -484,6 +514,18 @@ describe('RestaurantService', () => {
       });
       expect(result).toEqual({
         ok: true,
+      });
+    });
+
+    it('should fail if restaurant is not instance of Restaurant', async () => {
+      restaurantRepository.findAndCheck.mockResolvedValue({
+        ok: false,
+        error: 'error',
+      });
+      const result = await service.createDish(ownerArgs, createDishArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'error',
       });
     });
 
