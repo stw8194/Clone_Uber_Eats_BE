@@ -362,7 +362,7 @@ describe('UserModule (e2e)', () => {
             },
           } = res;
           expect(ok).toBe(false);
-          expect(error).toBe('Same email');
+          expect(error).toBe('You cannot use your current email address');
         });
     });
   });
