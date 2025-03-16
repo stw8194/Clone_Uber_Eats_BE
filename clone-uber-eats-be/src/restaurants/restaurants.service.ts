@@ -77,13 +77,11 @@ export class RestaurantService {
         );
         restaurant.category = category;
       }
-      await this.restaurants.save([
-        {
-          id: editRestaurantInput.restaurantId,
-          ...editRestaurantInput,
-          ...(category && { category }),
-        },
-      ]);
+      await this.restaurants.save({
+        id: editRestaurantInput.restaurantId,
+        ...editRestaurantInput,
+        ...(category && { category }),
+      });
       return { ok: true };
     } catch {
       return {
@@ -101,7 +99,7 @@ export class RestaurantService {
       const restaurant = await this.restaurants.findAndCheck(
         restaurantId,
         owner,
-        'edit',
+        'delete',
       );
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;

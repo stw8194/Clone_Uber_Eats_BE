@@ -100,8 +100,13 @@ export class UserService {
   ): Promise<EditProfileOutput> {
     try {
       const user = await this.users.findOneBy({ id: userId });
-      if (email == user.email) throw new Error();
       if (email) {
+        if (email == user.email) {
+          return {
+            ok: false,
+            error: 'You cannot use your current email address',
+          };
+        }
         user.email = email;
         user.verified = false;
         await this.verifications.delete({ user: { id: user.id } });
@@ -117,14 +122,11 @@ export class UserService {
       return {
         ok: true,
       };
-    } catch (error) {
-      if (error.table == 'user') {
-        return {
-          ok: false,
-          error: 'This email is already in use',
-        };
-      }
-      return { ok: false, error: 'Same email' };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not edit profile',
+      };
     }
   }
 
