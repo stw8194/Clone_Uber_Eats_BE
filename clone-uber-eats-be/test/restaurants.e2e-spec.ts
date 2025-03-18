@@ -12,6 +12,7 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
+import { number } from 'joi';
 
 jest.mock('got', () => {
   return {
@@ -128,10 +129,10 @@ describe('RestaurantModule (e2e)', () => {
 
   describe('createRestaurant', () => {
     const testRestaurant = {
-      name: 'name',
-      coverImg: 'coverImg',
-      address: 'address',
-      categoryName: 'categoryName',
+      name: 'old name',
+      coverImg: 'old coverImg',
+      address: 'old address',
+      categoryName: 'old categoryName',
     };
     it('should create new restaurant', () => {
       return privateTest(
@@ -191,9 +192,167 @@ describe('RestaurantModule (e2e)', () => {
     });
   });
 
+  describe('findRestaurantById', () => {
+    let restaurantId: number;
+    beforeAll(async () => {
+      const [restaurant] = await restaurantRepository.find();
+      restaurantId = restaurant.id;
+    });
+
+    it('should find restaurant by id', async () => {
+      return publicTest(`
+        {
+          restaurant(
+            restaurantId: ${restaurantId}
+       ) {
+            ok
+            error
+            restaurant {
+              name
+              coverImg
+              address
+              category {
+                name
+                slug
+              }
+            }
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurant: { ok, error, restaurant },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurant).toStrictEqual({
+            name: 'old name',
+            coverImg: 'old coverImg',
+            address: 'old address',
+            category: {
+              name: 'old categoryname',
+              slug: 'old-categoryname',
+            },
+          });
+        });
+    });
+  });
+
   describe('editRestaurant', () => {
-    it.todo('should edit restaurant with real owner');
-    it.todo('should fail with fake owner');
+    const newTestRestaurant = {
+      name: 'new name',
+      coverImg: 'new coverImg',
+      address: 'new address',
+      categoryName: 'new categoryName',
+    };
+
+    let restaurantId: number;
+    beforeAll(async () => {
+      const [restaurant] = await restaurantRepository.find();
+      restaurantId = restaurant.id;
+    });
+
+    it('should edit restaurant with real owner', async () => {
+      return privateTest(
+        `mutation {
+          editRestaurant(input:{
+            restaurantId: ${restaurantId}
+            name: "${newTestRestaurant.name}"
+            coverImg: "${newTestRestaurant.coverImg}"
+            address: "${newTestRestaurant.address}"
+            categoryName: "${newTestRestaurant.categoryName}"
+          }){
+            ok
+            error
+            }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editRestaurant: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+
+    it('should change restaurant', async () => {
+      return publicTest(`
+        {
+          restaurant(
+            restaurantId: ${restaurantId}
+       ) {
+            ok
+            error
+            restaurant {
+              name
+              coverImg
+              address
+              category {
+                name
+                slug
+              }
+            }
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurant: { ok, error, restaurant },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurant).toStrictEqual({
+            name: 'new name',
+            coverImg: 'new coverImg',
+            address: 'new address',
+            category: {
+              name: 'new categoryname',
+              slug: 'new-categoryname',
+            },
+          });
+        });
+    });
+
+    it('should fail with fake owner', async () => {
+      return privateTest(
+        `mutation {
+          editRestaurant(input:{
+            restaurantId: ${restaurantId}
+          }){
+            ok
+            error
+            }
+        }`,
+        testFakeOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editRestaurant: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe("You cannot edit a restaurant that you don't own");
+        });
+    });
   });
 
   describe('allCategories', () => {
@@ -206,10 +365,6 @@ describe('RestaurantModule (e2e)', () => {
 
   describe('allRestaurants', () => {
     it.todo('should return all restaurants');
-  });
-
-  describe('findRestaurantById', () => {
-    it.todo('should find restaurant by id');
   });
 
   describe('searchRestaurantByName', () => {
