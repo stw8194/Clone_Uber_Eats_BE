@@ -12,7 +12,6 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
-import { number } from 'joi';
 
 jest.mock('got', () => {
   return {
@@ -46,6 +45,9 @@ const testRestaurant = {
   address: 'address',
   categoryName: 'categoryName',
 };
+
+const TEST_PAGE = 2;
+const TEST_LIMIT = 5;
 
 describe('RestaurantModule (e2e)', () => {
   jest.setTimeout(10000);
@@ -357,18 +359,15 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('restaurants', () => {
-    const TEST_PAGE = 2;
-    const TEST_LIMIT = 5;
-
     beforeAll(async () => {
       const createTestRestaurant = async (seq: number) => {
         return await privateTest(
           `mutation {
             createRestaurant(
                 input: {
-                    name: "${testRestaurant.name} ${seq}"
-                    coverImg: "${testRestaurant.coverImg} ${seq}"
-                    address: "${testRestaurant.address} ${seq}"
+                    name: "${testRestaurant.name} number${seq}"
+                    coverImg: "${testRestaurant.coverImg} number${seq}"
+                    address: "${testRestaurant.address} number${seq}"
                     categoryName: "${testRestaurant.categoryName}"
                 }) {
                 ok
@@ -414,10 +413,10 @@ describe('RestaurantModule (e2e)', () => {
             },
           } = res;
           const expectedNames = [
-            'name 4',
-            'name 3',
-            'name 2',
-            'name 1',
+            'name number4',
+            'name number3',
+            'name number2',
+            'name number1',
             'new name',
           ];
 
@@ -462,11 +461,11 @@ describe('RestaurantModule (e2e)', () => {
             },
           } = res;
           const expectedNames = [
-            'name 9',
-            'name 8',
-            'name 7',
-            'name 6',
-            'name 5',
+            'name number9',
+            'name number8',
+            'name number7',
+            'name number6',
+            'name number5',
           ];
 
           expect(ok).toBe(true);
@@ -479,14 +478,61 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('searchRestaurant', () => {
-    it.todo('should search restaurant by name');
+    const testQuery = 'number';
+    it('should search restaurant by part of name', async () => {
+      return publicTest(`
+        {
+          searchRestaurant(input:{
+            page: 1
+            limit: ${TEST_LIMIT}
+            query: "${testQuery}"
+          }) {
+            ok
+            error
+            restaurants {
+              name  
+            }
+            totalPages
+            totalResults
+            }}
+        `)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                searchRestaurant: {
+                  ok,
+                  error,
+                  restaurants,
+                  totalPages,
+                  totalResults,
+                },
+              },
+            },
+          } = res;
+          const expectedNames = [
+            'name number1',
+            'name number2',
+            'name number3',
+            'name number4',
+            'name number5',
+          ];
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(totalPages).toBe(2);
+          expect(totalResults).toBe(9);
+        });
+    });
   });
 
   describe('allCategories', () => {
     it.todo('should return all cateogories');
   });
 
-  describe('findCategoryBySlug', () => {
+  describe('category', () => {
     it.todo('should find category and restaurant by slug');
   });
 
