@@ -6,6 +6,10 @@ import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Verification } from 'src/users/entities/verification.entity';
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from '@testcontainers/postgresql';
 
 jest.mock('got', () => {
   return {
@@ -21,6 +25,8 @@ const testUser = {
 };
 
 describe('UserModule (e2e)', () => {
+  jest.setTimeout(10000);
+  let postgresContainer: StartedPostgreSqlContainer;
   let app: INestApplication;
   let usersRepository: Repository<User>;
   let verificationRepository: Repository<Verification>;
@@ -32,6 +38,13 @@ describe('UserModule (e2e)', () => {
     baseTest().set('X-JWT', jwtToken).send({ query });
 
   beforeAll(async () => {
+    postgresContainer = await new PostgreSqlContainer()
+      .withUsername(process.env.DB_USERNAME)
+      .withPassword(process.env.DB_PASSWORD)
+      .withDatabase(process.env.DB_DATABASE)
+      .withExposedPorts(5432)
+      .start();
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -49,6 +62,8 @@ describe('UserModule (e2e)', () => {
     await dataSource.dropDatabase();
     await dataSource.destroy();
     await app.close();
+
+    await postgresContainer.stop();
   });
 
   describe('createAccount', () => {
