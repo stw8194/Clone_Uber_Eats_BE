@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { RestaurantRepository } from 'src/restaurants/repositories/restaurant.repository';
 import { CategoryRepository } from 'src/restaurants/repositories/category.repository';
@@ -12,7 +12,6 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
-import { array } from 'joi';
 
 jest.mock('got', () => {
   return {
@@ -47,6 +46,12 @@ const testRestaurant = {
   categoryName: 'categoryName',
 };
 
+const testDish = {
+  name: 'name',
+  price: 0,
+  description: 'description',
+};
+
 const TEST_PAGE = 2;
 const TEST_LIMIT = 5;
 
@@ -55,12 +60,9 @@ describe('RestaurantModule (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer;
   let app: INestApplication;
   let restaurantRepository: RestaurantRepository;
-  let categoryRepository: CategoryRepository;
-  let dishRepository: Repository<Dish>;
   let testClientJwtToken: string;
   let testRealOwnerJwtToken: string;
   let testFakeOwnerJwtToken: string;
-  let slugs = array;
 
   const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
   const publicTest = (query: string) => baseTest().send({ query });
@@ -114,8 +116,6 @@ describe('RestaurantModule (e2e)', () => {
     }).compile();
     app = module.createNestApplication();
     restaurantRepository = module.get(RestaurantRepository);
-    categoryRepository = module.get(getRepositoryToken(CategoryRepository));
-    dishRepository = module.get(getRepositoryToken(Dish));
 
     await app.init();
 
@@ -617,11 +617,44 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('createDish', () => {
-    it.todo('should create dish');
+    let restaurantId: number;
+    beforeAll(async () => {
+      const [restaurant] = await restaurantRepository.find();
+      restaurantId = restaurant.id;
+    });
+    it('should create dish', async () => {
+      return privateTest(
+        `mutation {
+          createDish(input: {
+            name: "${testDish.name}"
+            price: ${testDish.price}
+            description: "${testDish.description}"
+            restaurantId: ${restaurantId}
+          }) {
+            ok
+            error
+            }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                createDish: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
   });
 
   describe('editDish', () => {
     it.todo('should edit dish with real owner');
+    it.todo('should change dish');
     it.todo('should fail with fake owner');
   });
 
