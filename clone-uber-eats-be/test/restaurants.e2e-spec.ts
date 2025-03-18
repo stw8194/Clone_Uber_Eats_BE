@@ -2,16 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { DataSource } from 'typeorm';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { RestaurantRepository } from 'src/restaurants/repositories/restaurant.repository';
-import { CategoryRepository } from 'src/restaurants/repositories/category.repository';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { UserRole } from 'src/users/entities/user.entity';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 jest.mock('got', () => {
   return {
@@ -60,6 +59,7 @@ describe('RestaurantModule (e2e)', () => {
   let postgresContainer: StartedPostgreSqlContainer;
   let app: INestApplication;
   let restaurantRepository: RestaurantRepository;
+  let dishRepository: Repository<Dish>;
   let testClientJwtToken: string;
   let testRealOwnerJwtToken: string;
   let testFakeOwnerJwtToken: string;
@@ -104,18 +104,14 @@ describe('RestaurantModule (e2e)', () => {
   };
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer()
-      .withUsername(process.env.DB_USERNAME)
-      .withPassword(process.env.DB_PASSWORD)
-      .withDatabase(process.env.DB_DATABASE)
-      .withExposedPorts(5432)
-      .start();
+    postgresContainer = await new PostgreSqlContainer().start();
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
     app = module.createNestApplication();
     restaurantRepository = module.get(RestaurantRepository);
+    dishRepository = module.get(getRepositoryToken(Dish));
 
     await app.init();
 
@@ -622,6 +618,7 @@ describe('RestaurantModule (e2e)', () => {
       const [restaurant] = await restaurantRepository.find();
       restaurantId = restaurant.id;
     });
+
     it('should create dish', async () => {
       return privateTest(
         `mutation {
@@ -653,9 +650,121 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('editDish', () => {
-    it.todo('should edit dish with real owner');
-    it.todo('should change dish');
-    it.todo('should fail with fake owner');
+    const newTestDish = {
+      name: 'new name',
+      price: 1,
+      description: 'new description',
+    };
+    let dishId: number;
+    let restaurantId: number;
+    beforeAll(async () => {
+      const [dish] = await dishRepository.find();
+      const [restaurant] = await restaurantRepository.find();
+      dishId = dish.id;
+      restaurantId = restaurant.id;
+    });
+
+    it('should edit dish with real owner', async () => {
+      return privateTest(
+        `mutation {
+          editDish(input: {
+            name: "${newTestDish.name}"
+            price: ${newTestDish.price}
+            description: "${newTestDish.description}"
+            dishId: ${dishId}
+          }){
+            ok
+            error  
+          }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editDish: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+
+    it('should change dish', async () => {
+      return publicTest(
+        `{
+          restaurant(
+            restaurantId: ${restaurantId}
+       ) {
+            ok
+            error
+            restaurant {
+              menu {
+                name
+                price
+                description
+              }
+            }
+          }
+        }`,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurant: {
+                  ok,
+                  error,
+                  restaurant: {
+                    menu: [{ name, price, description }],
+                  },
+                },
+              },
+            },
+          } = res;
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(name).toBe(newTestDish.name);
+          expect(price).toBe(newTestDish.price);
+          expect(description).toBe(newTestDish.description);
+        });
+    });
+
+    it('should fail with fake owner', async () => {
+      return privateTest(
+        `mutation {
+          editDish(input: {
+            name: "${newTestDish.name}"
+            price: ${newTestDish.price}
+            description: "${newTestDish.description}"
+            dishId: ${dishId}
+          }){
+            ok
+            error  
+          }
+        }`,
+        testFakeOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                editDish: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(false);
+          expect(error).toBe(
+            "You cannot edit a dish to a restaurant that you don't own",
+          );
+        });
+    });
   });
 
   describe('deleteRestaurant', () => {

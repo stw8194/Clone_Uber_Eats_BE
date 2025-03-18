@@ -38,12 +38,7 @@ describe('UserModule (e2e)', () => {
     baseTest().set('X-JWT', jwtToken).send({ query });
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer()
-      .withUsername(process.env.DB_USERNAME)
-      .withPassword(process.env.DB_PASSWORD)
-      .withDatabase(process.env.DB_DATABASE)
-      .withExposedPorts(5432)
-      .start();
+    postgresContainer = await new PostgreSqlContainer().start();
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
