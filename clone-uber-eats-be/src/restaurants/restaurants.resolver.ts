@@ -62,13 +62,13 @@ export class RestaurantResolver {
   }
 
   @Mutation((returns) => DeleteRestaurantOutput)
-  @Role(['Any'])
+  @Role(['Owner'])
   deleteRestaurant(
-    @AuthUser() user: User,
+    @AuthUser() owner: User,
     @Args() deleteRestaurantInput: DeleteRestaurantInput,
   ): Promise<DeleteRestaurantOutput> {
     return this.restaurantService.deleteRestaurant(
-      user,
+      owner,
       deleteRestaurantInput.restaurantId,
     );
   }

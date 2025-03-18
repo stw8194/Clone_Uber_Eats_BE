@@ -768,6 +768,63 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('deleteRestaurant', () => {
-    it.todo('should delete restaurant');
+    let restaurantId: number;
+    beforeAll(async () => {
+      const [restaurant] = await restaurantRepository.find();
+      restaurantId = restaurant.id;
+    });
+
+    it('should delete restaurant', async () => {
+      return privateTest(
+        `mutation {
+          deleteRestaurant(
+            restaurantId: ${restaurantId}
+            ) {
+              ok
+              error
+            }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                deleteRestaurant: { ok, error },
+              },
+            },
+          } = res;
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+
+    it('should not have deleted restaurant in DB', async () => {
+      return publicTest(
+        `{
+          restaurant(
+            restaurantId: ${restaurantId}
+          ) {
+            ok
+            error  
+          }
+        }`,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurant: { ok, error },
+              },
+            },
+          } = res;
+
+          expect(ok).toBe(false);
+          expect(error).toBe('Restaurant not found');
+        });
+    });
   });
 });
