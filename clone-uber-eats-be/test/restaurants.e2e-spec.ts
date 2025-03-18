@@ -12,6 +12,7 @@ import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
+import { array } from 'joi';
 
 jest.mock('got', () => {
   return {
@@ -59,6 +60,7 @@ describe('RestaurantModule (e2e)', () => {
   let testClientJwtToken: string;
   let testRealOwnerJwtToken: string;
   let testFakeOwnerJwtToken: string;
+  let slugs = array;
 
   const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
   const publicTest = (query: string) => baseTest().send({ query });
@@ -529,11 +531,89 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('allCategories', () => {
-    it.todo('should return all cateogories');
+    it('should return all cateogories', async () => {
+      return publicTest(`
+        {
+          allCategories {
+            ok
+            error
+            categories {
+              slug
+            }
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                allCategories: { ok, error, categories },
+              },
+            },
+          } = res;
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(categories).toStrictEqual([
+            { slug: 'categoryname' },
+            { slug: 'new-categoryname' },
+          ]);
+        });
+    });
   });
 
   describe('category', () => {
-    it.todo('should find category and restaurant by slug');
+    it('should find category and restaurants by slug', async () => {
+      return publicTest(`{
+        category(input: {
+          slug: "categoryname"
+          page: 1
+          limit: ${TEST_LIMIT}
+        }) {
+          ok
+          error
+          category {
+            slug
+          }
+          restaurants {
+            name
+          }
+          totalPages
+          totalResults
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                category: {
+                  ok,
+                  error,
+                  category,
+                  restaurants,
+                  totalPages,
+                  totalResults,
+                },
+              },
+            },
+          } = res;
+          const expectedNames = [
+            'name number1',
+            'name number2',
+            'name number3',
+            'name number4',
+            'name number5',
+          ];
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(category).toStrictEqual({ slug: 'categoryname' });
+          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(totalPages).toBe(2);
+          expect(totalResults).toBe(9);
+        });
+    });
   });
 
   describe('createDish', () => {
