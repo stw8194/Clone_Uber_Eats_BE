@@ -40,6 +40,13 @@ const testFakeOwner = {
   role: UserRole.Owner,
 };
 
+const testRestaurant = {
+  name: 'name',
+  coverImg: 'coverImg',
+  address: 'address',
+  categoryName: 'categoryName',
+};
+
 describe('RestaurantModule (e2e)', () => {
   jest.setTimeout(10000);
   let postgresContainer: StartedPostgreSqlContainer;
@@ -128,12 +135,6 @@ describe('RestaurantModule (e2e)', () => {
   });
 
   describe('createRestaurant', () => {
-    const testRestaurant = {
-      name: 'old name',
-      coverImg: 'old coverImg',
-      address: 'old address',
-      categoryName: 'old categoryName',
-    };
     it('should create new restaurant', () => {
       return privateTest(
         `mutation {
@@ -192,7 +193,7 @@ describe('RestaurantModule (e2e)', () => {
     });
   });
 
-  describe('findRestaurantById', () => {
+  describe('restaurant', () => {
     let restaurantId: number;
     beforeAll(async () => {
       const [restaurant] = await restaurantRepository.find();
@@ -230,12 +231,12 @@ describe('RestaurantModule (e2e)', () => {
           expect(ok).toBe(true);
           expect(error).toBe(null);
           expect(restaurant).toStrictEqual({
-            name: 'old name',
-            coverImg: 'old coverImg',
-            address: 'old address',
+            name: testRestaurant.name,
+            coverImg: testRestaurant.coverImg,
+            address: testRestaurant.address,
             category: {
-              name: 'old categoryname',
-              slug: 'old-categoryname',
+              name: 'categoryname',
+              slug: 'categoryname',
             },
           });
         });
@@ -317,9 +318,9 @@ describe('RestaurantModule (e2e)', () => {
           expect(ok).toBe(true);
           expect(error).toBe(null);
           expect(restaurant).toStrictEqual({
-            name: 'new name',
-            coverImg: 'new coverImg',
-            address: 'new address',
+            name: newTestRestaurant.name,
+            coverImg: newTestRestaurant.coverImg,
+            address: newTestRestaurant.address,
             category: {
               name: 'new categoryname',
               slug: 'new-categoryname',
@@ -355,20 +356,138 @@ describe('RestaurantModule (e2e)', () => {
     });
   });
 
+  describe('restaurants', () => {
+    const TEST_PAGE = 2;
+    const TEST_LIMIT = 5;
+
+    beforeAll(async () => {
+      const createTestRestaurant = async (seq: number) => {
+        return await privateTest(
+          `mutation {
+            createRestaurant(
+                input: {
+                    name: "${testRestaurant.name} ${seq}"
+                    coverImg: "${testRestaurant.coverImg} ${seq}"
+                    address: "${testRestaurant.address} ${seq}"
+                    categoryName: "${testRestaurant.categoryName}"
+                }) {
+                ok
+                error
+            }
+        }`,
+          testRealOwnerJwtToken,
+        );
+      };
+      for (let seq = 1; seq < 10; seq++) {
+        await createTestRestaurant(seq);
+      }
+    });
+
+    it(`should return ${TEST_LIMIT} restaurants`, async () => {
+      return publicTest(`{
+        restaurants(input: {
+          page: 1
+          limit: ${TEST_LIMIT}
+        }) {
+          ok
+          error
+          restaurants {
+            name  
+          }
+          totalPages
+          totalResults
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurants: {
+                  ok,
+                  error,
+                  restaurants,
+                  totalPages,
+                  totalResults,
+                },
+              },
+            },
+          } = res;
+          const expectedNames = [
+            'name 4',
+            'name 3',
+            'name 2',
+            'name 1',
+            'new name',
+          ];
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(totalPages).toBe(2);
+          expect(totalResults).toBe(10);
+        });
+    });
+
+    it(`should return ${TEST_LIMIT} restaurants after ${
+      TEST_PAGE * (TEST_LIMIT - 1)
+    }`, async () => {
+      return publicTest(`{
+        restaurants(input: {
+          page: ${TEST_PAGE}
+          limit: ${TEST_LIMIT}
+        }) {
+          ok
+          error
+          restaurants {
+            name  
+          }
+          totalPages
+          totalResults
+          }
+        }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurants: {
+                  ok,
+                  error,
+                  restaurants,
+                  totalPages,
+                  totalResults,
+                },
+              },
+            },
+          } = res;
+          const expectedNames = [
+            'name 9',
+            'name 8',
+            'name 7',
+            'name 6',
+            'name 5',
+          ];
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(totalPages).toBe(2);
+          expect(totalResults).toBe(10);
+        });
+    });
+  });
+
+  describe('searchRestaurant', () => {
+    it.todo('should search restaurant by name');
+  });
+
   describe('allCategories', () => {
     it.todo('should return all cateogories');
   });
 
   describe('findCategoryBySlug', () => {
     it.todo('should find category and restaurant by slug');
-  });
-
-  describe('allRestaurants', () => {
-    it.todo('should return all restaurants');
-  });
-
-  describe('searchRestaurantByName', () => {
-    it.todo('should search restaurant by name');
   });
 
   describe('createDish', () => {
