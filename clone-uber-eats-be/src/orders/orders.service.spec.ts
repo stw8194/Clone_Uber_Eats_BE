@@ -12,6 +12,7 @@ import { PUB_SUB } from 'src/common/common.constants';
 
 const mockRepository = () => ({
   find: jest.fn(),
+  findOne: jest.fn(),
   findOneBy: jest.fn(),
   create: jest.fn(),
   save: jest.fn(),
@@ -33,7 +34,6 @@ describe('RestaurantService', () => {
   let restaurantRepository: mockRepository<Restaurant>;
   let dishRepository: mockRepository<Dish>;
   let orderItemRepository: mockRepository<OrderItem>;
-  let pubSub: PubSub;
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
@@ -70,7 +70,6 @@ describe('RestaurantService', () => {
     restaurantRepository = module.get(getRepositoryToken(Restaurant));
     dishRepository = module.get(getRepositoryToken(Dish));
     orderItemRepository = module.get(getRepositoryToken(OrderItem));
-    pubSub = module.get<PubSub>(PUB_SUB);
   });
 
   const customerArgs = {
@@ -158,6 +157,17 @@ describe('RestaurantService', () => {
     orders: ordersArgs,
     owner: ownerArgs,
     ownerId: 3,
+  };
+
+  const orderArgs = {
+    id: 1,
+    customer: customerArgs,
+    customerId: customerArgs.id,
+    driver: driverArgs,
+    driverId: driverArgs.id,
+    total: 1234,
+    status: OrderStatus.Pending,
+    restaurant: restaurantArgs,
   };
 
   it('should be defined', () => {
@@ -292,7 +302,7 @@ describe('RestaurantService', () => {
     it('should get orders with same status', async () => {
       restaurantRepository.find.mockResolvedValue([restaurantArgs]);
       const result = await service.getOrders(ownerArgs, {
-        status: OrderStatus.Pending,
+        status: getOrdersArgs.status,
       });
 
       expect(restaurantRepository.find).toHaveBeenCalledTimes(1);
@@ -340,7 +350,6 @@ describe('RestaurantService', () => {
           status: undefined,
         },
       });
-      console.log(result);
       expect(result).toEqual({
         ok: true,
         orders: ordersArgs,
@@ -379,7 +388,80 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('getOrder');
+  describe('canSeeOrder', () => {
+    const cases = [
+      { allowed: true, user: customerArgs },
+      { allowed: false, user: { id: 99, role: UserRole.Client } as User },
+      { allowed: true, user: driverArgs },
+      { allowed: false, user: { id: 99, role: UserRole.Delivery } as User },
+      { allowed: true, user: ownerArgs },
+      { allowed: false, user: { id: 99, role: UserRole.Owner } as User },
+    ];
+    it.each(cases)(
+      'should return $allowed for $user.role',
+      ({ allowed, user }) => {
+        expect(service.canSeeOrder(user, orderArgs as Order)).toBe(allowed);
+      },
+    );
+  });
+
+  describe('getOrder', () => {
+    it('should fail if order not found', async () => {
+      orderRepository.findOne.mockResolvedValue(undefined);
+      const result = await service.getOrder(customerArgs, {
+        id: orderArgs.id,
+      });
+
+      expect(orderRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(orderRepository.findOne).toHaveBeenCalledWith({
+        where: { id: orderArgs.id },
+        relations: ['restaurant'],
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Order not found',
+      });
+    });
+
+    it('should fail if user have no authority', async () => {
+      const otherCustomerArgs = {
+        id: 4,
+        role: UserRole.Client,
+      } as User;
+      orderRepository.findOne.mockResolvedValue(orderArgs);
+      const result = await service.getOrder(otherCustomerArgs, {
+        id: orderArgs.id,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'You cannot see that',
+      });
+    });
+
+    it('should get order', async () => {
+      orderRepository.findOne.mockResolvedValue(orderArgs);
+      const result = await service.getOrder(customerArgs, {
+        id: orderArgs.id,
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        order: orderArgs,
+      });
+    });
+
+    it('fail on exception', async () => {
+      orderRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.getOrder(customerArgs, {
+        id: orderArgs.id,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not get order',
+      });
+    });
+  });
+
   it.todo('editOrder');
   it.todo('takeOrder');
 });
