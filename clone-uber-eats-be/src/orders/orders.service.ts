@@ -39,9 +39,7 @@ export class OrderService {
     { restaurantId, items }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
-      const restaurant = await this.restaurants.findOne({
-        where: { id: restaurantId },
-      });
+      const restaurant = await this.restaurants.findOneBy({ id: restaurantId });
       if (!restaurant) {
         return {
           ok: false,
@@ -56,6 +54,12 @@ export class OrderService {
           return {
             ok: false,
             error: 'Dish not found',
+          };
+        }
+        if (restaurantId !== dish.restaurantId) {
+          return {
+            ok: false,
+            error: 'Dish is not belong this restaurant',
           };
         }
         let dishFinalPrice = dish.price;
@@ -91,6 +95,7 @@ export class OrderService {
           items: orderItems,
         }),
       );
+
       await this.pubSub.publish(NEW_PENDING_ORDER, {
         pendingOrders: { order, ownerId: restaurant.ownerId },
       });
