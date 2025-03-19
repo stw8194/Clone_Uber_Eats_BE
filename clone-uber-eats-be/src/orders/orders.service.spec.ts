@@ -2,7 +2,7 @@ import { Repository } from 'typeorm';
 import { OrderService } from './orders.service';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Order } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { OrderItem } from './entities/order-item.entity';
@@ -80,12 +80,19 @@ describe('RestaurantService', () => {
     verified: true,
   } as User;
 
-  const restaurantArgs = {
-    id: 1,
-    name: '',
-    coverImg: '',
-    address: '',
-  };
+  const driverArgs = {
+    id: 2,
+    email: '',
+    role: UserRole.Delivery,
+    verified: true,
+  } as User;
+
+  const ownerArgs = {
+    id: 3,
+    email: '',
+    role: UserRole.Owner,
+    verified: true,
+  } as User;
 
   const dishArgs = {
     name: '',
@@ -111,6 +118,46 @@ describe('RestaurantService', () => {
         ],
       },
     ],
+  };
+
+  const ordersArgs = [
+    {
+      id: 1,
+      customer: customerArgs,
+      customerId: customerArgs.id,
+      driver: driverArgs,
+      driverId: driverArgs.id,
+      total: 1234,
+      status: OrderStatus.Pending,
+    },
+    {
+      id: 2,
+      customer: customerArgs,
+      customerId: customerArgs.id,
+      driver: driverArgs,
+      driverId: driverArgs.id,
+      total: 1234,
+      status: OrderStatus.Pending,
+    },
+    {
+      id: 3,
+      customer: customerArgs,
+      customerId: customerArgs.id,
+      driver: driverArgs,
+      driverId: driverArgs.id,
+      total: 1234,
+      status: OrderStatus.Cooked,
+    },
+  ];
+
+  const restaurantArgs = {
+    id: 1,
+    name: '',
+    coverImg: '',
+    address: '',
+    orders: ordersArgs,
+    owner: ownerArgs,
+    ownerId: 3,
   };
 
   it('should be defined', () => {
@@ -237,7 +284,101 @@ describe('RestaurantService', () => {
       });
     });
   });
-  it.todo('getOrders');
+
+  describe('getOrders', () => {
+    const getOrdersArgs = {
+      status: OrderStatus.Pending,
+    };
+    it('should get orders with same status', async () => {
+      restaurantRepository.find.mockResolvedValue([restaurantArgs]);
+      const result = await service.getOrders(ownerArgs, {
+        status: OrderStatus.Pending,
+      });
+
+      expect(restaurantRepository.find).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.find).toHaveBeenCalledWith({
+        where: {
+          owner: { id: ownerArgs.id },
+        },
+        relations: ['orders'],
+      });
+      expect(result).toEqual({
+        ok: true,
+        orders: ordersArgs.slice(0, 2),
+      });
+    });
+
+    it('should get orders when user is client', async () => {
+      orderRepository.find.mockResolvedValue(ordersArgs);
+      const result = await service.getOrders(customerArgs, {
+        status: undefined,
+      });
+
+      expect(orderRepository.find).toHaveBeenCalledTimes(1);
+      expect(orderRepository.find).toHaveBeenCalledWith({
+        where: {
+          customer: customerArgs,
+          status: undefined,
+        },
+      });
+      expect(result).toEqual({
+        ok: true,
+        orders: ordersArgs,
+      });
+    });
+
+    it('should get orders when user is delivery', async () => {
+      orderRepository.find.mockResolvedValue(ordersArgs);
+      const result = await service.getOrders(driverArgs, {
+        status: undefined,
+      });
+
+      expect(orderRepository.find).toHaveBeenCalledTimes(1);
+      expect(orderRepository.find).toHaveBeenCalledWith({
+        where: {
+          driver: driverArgs,
+          status: undefined,
+        },
+      });
+      console.log(result);
+      expect(result).toEqual({
+        ok: true,
+        orders: ordersArgs,
+      });
+    });
+
+    it('should get orders when user is owner', async () => {
+      restaurantRepository.find.mockResolvedValue([restaurantArgs]);
+      const result = await service.getOrders(ownerArgs, {
+        status: undefined,
+      });
+
+      expect(restaurantRepository.find).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.find).toHaveBeenCalledWith({
+        where: {
+          owner: { id: ownerArgs.id },
+        },
+        relations: ['orders'],
+      });
+      expect(result).toEqual({
+        ok: true,
+        orders: ordersArgs,
+      });
+    });
+
+    it('fail on exception', async () => {
+      orderRepository.find.mockRejectedValue(new Error());
+      const result = await service.getOrders(customerArgs, {
+        status: undefined,
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not get orders',
+      });
+    });
+  });
+
   it.todo('getOrder');
   it.todo('editOrder');
   it.todo('takeOrder');
