@@ -39,9 +39,7 @@ export class OrderService {
     { restaurantId, items }: CreateOrderInput,
   ): Promise<CreateOrderOutput> {
     try {
-      const restaurant = await this.restaurants.findOne({
-        where: { id: restaurantId },
-      });
+      const restaurant = await this.restaurants.findOneBy({ id: restaurantId });
       if (!restaurant) {
         return {
           ok: false,
@@ -58,21 +56,31 @@ export class OrderService {
             error: 'Dish not found',
           };
         }
+        if (restaurantId !== dish.restaurantId) {
+          return {
+            ok: false,
+            error: 'Dish is not belong this restaurant',
+          };
+        }
         let dishFinalPrice = dish.price;
-        for (const itemOption of item.options) {
-          const dishOption = dish.options.find(
-            (dishOption) => dishOption.name === itemOption.name,
-          );
-          if (dishOption) {
-            if (dishOption.extra) {
-              dishFinalPrice += dishOption.extra;
-            } else {
-              const dishOptionChoice = dishOption.choices?.find(
-                (dishOptionChoice) =>
-                  dishOptionChoice.name === itemOption.choice,
-              );
-              if (dishOptionChoice.extra) {
-                dishFinalPrice += dishOptionChoice.extra;
+        if (item.options) {
+          for (const itemOption of item.options) {
+            const dishOption = dish.options.find(
+              (dishOption) => dishOption.name === itemOption.name,
+            );
+            if (dishOption) {
+              if (dishOption.extra) {
+                dishFinalPrice += dishOption.extra;
+              } else {
+                if (dishOption.choices) {
+                  const dishOptionChoice = dishOption.choices.find(
+                    (dishOptionChoice) =>
+                      dishOptionChoice.name === itemOption.choice,
+                  );
+                  if (dishOptionChoice.extra) {
+                    dishFinalPrice += dishOptionChoice.extra;
+                  }
+                }
               }
             }
           }
@@ -83,6 +91,7 @@ export class OrderService {
         );
         orderItems.push(orderItem);
       }
+      console.log(orderFinalPrice);
       const order = await this.orders.save(
         this.orders.create({
           customer,
@@ -91,6 +100,7 @@ export class OrderService {
           items: orderItems,
         }),
       );
+
       await this.pubSub.publish(NEW_PENDING_ORDER, {
         pendingOrders: { order, ownerId: restaurant.ownerId },
       });
