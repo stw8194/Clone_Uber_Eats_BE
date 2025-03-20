@@ -106,6 +106,7 @@ describe('RestaurantService', () => {
   } as User;
 
   const dishArgs = {
+    id: 1,
     name: '',
     price: 1000,
     description: '',
@@ -127,6 +128,9 @@ describe('RestaurantService', () => {
             extra: 200,
           },
         ],
+      },
+      {
+        name: 'name3',
       },
     ],
   };
@@ -190,22 +194,19 @@ describe('RestaurantService', () => {
     const createOrderItemArgs = [
       {
         dishId: 1,
+      },
+      {
+        dishId: 1,
         options: [
           {
             name: 'name1',
           },
-        ],
-      },
-      {
-        dishId: 2,
-        options: [
-          {
-            name: 'name2',
-            choice: 'choice1',
-          },
           {
             name: 'name2',
             choice: 'choice2',
+          },
+          {
+            name: 'name3',
           },
         ],
       },
@@ -588,5 +589,70 @@ describe('RestaurantService', () => {
       });
     });
   });
-  it.todo('takeOrder');
+
+  describe('takeOrder', () => {
+    const orderWithoutDriverArgs = {
+      id: 4,
+      customer: customerArgs,
+      customerId: customerArgs.id,
+      total: 1234,
+      status: OrderStatus.Pending,
+      restaurant: restaurantArgs,
+    };
+    it('should fail if order not found', async () => {
+      orderRepository.findOneBy.mockResolvedValue(undefined);
+      const result = await service.takeOrder(driverArgs, { id: orderArgs.id });
+
+      expect(orderRepository.findOneBy).toHaveBeenCalledTimes(1);
+      expect(orderRepository.findOneBy).toHaveBeenCalledWith({
+        id: orderArgs.id,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Order not found',
+      });
+    });
+
+    it('should fail if order alreay has driver', async () => {
+      orderRepository.findOneBy.mockResolvedValue(orderArgs);
+      const result = await service.takeOrder(driverArgs, { id: orderArgs.id });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'This order already has a driver',
+      });
+    });
+
+    it('should take order', async () => {
+      orderRepository.findOneBy.mockResolvedValue(orderWithoutDriverArgs);
+      const result = await service.takeOrder(driverArgs, {
+        id: orderWithoutDriverArgs.id,
+      });
+
+      expect(orderRepository.save).toHaveBeenCalledTimes(1);
+      expect(orderRepository.save).toHaveBeenCalledWith({
+        id: orderWithoutDriverArgs.id,
+        driver: driverArgs,
+      });
+      expect(pubSub.publish).toHaveBeenCalledTimes(1);
+      expect(pubSub.publish).toHaveBeenCalledWith(NEW_ORDER_UPDATES, {
+        orderUpdates: { ...orderWithoutDriverArgs, driver: driverArgs },
+      });
+      expect(result).toEqual({
+        ok: true,
+      });
+    });
+
+    it('fail on exception', async () => {
+      orderRepository.findOneBy.mockRejectedValue(new Error());
+      const result = await service.takeOrder(driverArgs, {
+        id: orderWithoutDriverArgs.id,
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not take order',
+      });
+    });
+  });
 });
