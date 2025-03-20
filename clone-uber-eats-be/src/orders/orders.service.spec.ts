@@ -8,7 +8,12 @@ import { Dish } from 'src/restaurants/entities/dish.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
 import { PubSub } from 'graphql-subscriptions';
-import { PUB_SUB } from 'src/common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_ORDER_UPDATES,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+} from 'src/common/common.constants';
 
 const mockRepository = () => ({
   find: jest.fn(),
@@ -34,6 +39,7 @@ describe('RestaurantService', () => {
   let restaurantRepository: mockRepository<Restaurant>;
   let dishRepository: mockRepository<Dish>;
   let orderItemRepository: mockRepository<OrderItem>;
+  let pubSub: PubSub;
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
@@ -70,6 +76,7 @@ describe('RestaurantService', () => {
     restaurantRepository = module.get(getRepositoryToken(Restaurant));
     dishRepository = module.get(getRepositoryToken(Dish));
     orderItemRepository = module.get(getRepositoryToken(OrderItem));
+    pubSub = module.get<PubSub>(PUB_SUB);
   });
 
   const customerArgs = {
@@ -77,6 +84,11 @@ describe('RestaurantService', () => {
     email: '',
     role: UserRole.Client,
     verified: true,
+  } as User;
+
+  const otherCustomerArgs = {
+    id: 4,
+    role: UserRole.Client,
   } as User;
 
   const driverArgs = {
@@ -271,14 +283,23 @@ describe('RestaurantService', () => {
           options: item.options,
         });
       });
-      orderRepository.create.mockReturnValue({
+      const order = {
         customerArgs,
         restaurantArgs,
         total: orderItems.reduce((sum) => sum + dishArgs.price, 0),
         items: orderItems,
-      });
+      };
+      orderRepository.create.mockReturnValue(order);
+      orderRepository.save.mockResolvedValue(order);
       const result = await service.createOrder(customerArgs, createOrderArgs);
 
+      expect(pubSub.publish).toHaveBeenCalledTimes(1);
+      expect(pubSub.publish).toHaveBeenCalledWith(NEW_PENDING_ORDER, {
+        pendingOrders: {
+          order,
+          ownerId: restaurantArgs.ownerId,
+        },
+      });
       expect(result).toEqual({
         ok: true,
       });
@@ -424,10 +445,6 @@ describe('RestaurantService', () => {
     });
 
     it('should fail if user have no authority', async () => {
-      const otherCustomerArgs = {
-        id: 4,
-        role: UserRole.Client,
-      } as User;
       orderRepository.findOne.mockResolvedValue(orderArgs);
       const result = await service.getOrder(otherCustomerArgs, {
         id: orderArgs.id,
@@ -462,6 +479,114 @@ describe('RestaurantService', () => {
     });
   });
 
-  it.todo('editOrder');
+  describe('editOrder', () => {
+    const ownerEditOrderArgs = {
+      id: orderArgs.id,
+      status: OrderStatus.Cooked,
+    };
+    const deliveryEditOrderArgs = {
+      id: orderArgs.id,
+      status: OrderStatus.PickedUp,
+    };
+    it('should fail if order not found', async () => {
+      orderRepository.findOneBy.mockResolvedValue(undefined);
+      const result = await service.editOrder(ownerArgs, ownerEditOrderArgs);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Order not found',
+      });
+    });
+
+    it('should fail if user have no authority to see order', async () => {
+      orderRepository.findOneBy.mockResolvedValue(orderArgs);
+      const result = await service.editOrder(
+        otherCustomerArgs,
+        ownerEditOrderArgs,
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'You cannot see that',
+      });
+    });
+
+    let cases = [
+      {
+        user: ownerArgs,
+        editArgs: deliveryEditOrderArgs,
+        syntax: 'Cooking or Cooked',
+      },
+      {
+        user: driverArgs,
+        editArgs: ownerEditOrderArgs,
+        syntax: 'PickedUp or Delivered',
+      },
+    ];
+
+    it.each(cases)(
+      'should fail if $user.role try to change status except $syntax',
+      async ({ user, editArgs, syntax }) => {
+        orderRepository.findOneBy.mockResolvedValue(orderArgs);
+        const result = await service.editOrder(user, editArgs);
+
+        expect(result).toEqual({
+          ok: false,
+          error: 'You cannot do that',
+        });
+      },
+    );
+
+    cases = [
+      {
+        user: ownerArgs,
+        editArgs: ownerEditOrderArgs,
+        syntax: 'Cooking or Cooked',
+      },
+      {
+        user: driverArgs,
+        editArgs: deliveryEditOrderArgs,
+        syntax: 'PickedUp or Delivered',
+      },
+    ];
+
+    it.each(cases)(
+      'should edit order if $user.role try to change status $syntax',
+      async ({ user, editArgs, syntax }) => {
+        orderRepository.findOneBy.mockResolvedValue(orderArgs);
+        const result = await service.editOrder(user, editArgs);
+
+        expect(orderRepository.save).toHaveBeenCalledTimes(1);
+        expect(orderRepository.save).toHaveBeenCalledWith(editArgs);
+        if (user.role === UserRole.Owner) {
+          if (editArgs.status === OrderStatus.Cooked) {
+            expect(pubSub.publish).toHaveBeenCalledTimes(2);
+            expect(pubSub.publish).toHaveBeenCalledWith(NEW_COOKED_ORDER, {
+              cookedOrders: { ...orderArgs, status: editArgs.status },
+            });
+          }
+        } else {
+          expect(pubSub.publish).toHaveBeenCalledTimes(1);
+          expect(pubSub.publish).toHaveBeenCalledWith(NEW_ORDER_UPDATES, {
+            orderUpdates: { ...orderArgs, status: editArgs.status },
+          });
+        }
+
+        expect(result).toEqual({
+          ok: true,
+        });
+      },
+    );
+
+    it('fail on exception', async () => {
+      orderRepository.findOneBy.mockRejectedValue(new Error());
+      const result = await service.editOrder(ownerArgs, ownerEditOrderArgs);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not edit order',
+      });
+    });
+  });
   it.todo('takeOrder');
 });
