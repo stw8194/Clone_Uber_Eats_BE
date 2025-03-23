@@ -302,6 +302,9 @@ describe('RestaurantService', () => {
         where: { category: { id: categoryArgs.id } },
         take: findCategoryArgs.limit,
         skip: (findCategoryArgs.page - 1) * findCategoryArgs.limit,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
 
       expect(result).toEqual({
@@ -357,6 +360,9 @@ describe('RestaurantService', () => {
       expect(restaurantRepository.findAndCount).toHaveBeenCalledWith({
         take: findRestaurantsArgs.limit,
         skip: (findRestaurantsArgs.page - 1) * findRestaurantsArgs.limit,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
       expect(result).toEqual({
         ok: false,
