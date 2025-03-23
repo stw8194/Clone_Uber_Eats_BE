@@ -65,7 +65,6 @@ export class RestaurantService {
       const restaurant = await this.restaurants.findAndCheck(
         editRestaurantInput.restaurantId,
         owner,
-        'edit',
       );
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;
@@ -99,7 +98,6 @@ export class RestaurantService {
       const restaurant = await this.restaurants.findAndCheck(
         restaurantId,
         owner,
-        'delete',
       );
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;
@@ -152,6 +150,9 @@ export class RestaurantService {
         where: { category: { id: category.id } },
         take: limit,
         skip: (page - 1) * limit,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
       if (!restaurants) {
         return {
@@ -183,6 +184,9 @@ export class RestaurantService {
       const [restaurants, totalResults] = await this.restaurants.findAndCount({
         take: limit,
         skip: (page - 1) * limit,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
       if (!restaurants) {
         return {
@@ -269,7 +273,6 @@ export class RestaurantService {
       const restaurant = await this.restaurants.findAndCheck(
         createDishInput.restaurantId,
         owner,
-        'create a dish to',
       );
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;
@@ -306,7 +309,7 @@ export class RestaurantService {
       if (dish.restaurant.ownerId !== owner.id) {
         return {
           ok: false,
-          error: "You cannot edit a dish to a restaurant that you don't own",
+          error: 'You are not allowed to do this',
         };
       }
       await this.dishes.save({

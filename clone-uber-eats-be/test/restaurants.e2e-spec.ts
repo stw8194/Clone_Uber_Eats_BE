@@ -351,7 +351,7 @@ describe('RestaurantModule (e2e)', () => {
             },
           } = res;
           expect(ok).toBe(false);
-          expect(error).toBe("You cannot edit a restaurant that you don't own");
+          expect(error).toBe('You are not allowed to do this');
         });
     });
   });
@@ -760,9 +760,7 @@ describe('RestaurantModule (e2e)', () => {
             },
           } = res;
           expect(ok).toBe(false);
-          expect(error).toBe(
-            "You cannot edit a dish to a restaurant that you don't own",
-          );
+          expect(error).toBe('You are not allowed to do this');
         });
     });
   });

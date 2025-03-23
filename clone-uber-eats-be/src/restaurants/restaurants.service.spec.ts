@@ -159,7 +159,6 @@ describe('RestaurantService', () => {
       expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
         editRestaurantArgs.restaurantId,
         ownerArgs,
-        'edit',
       );
       expect(categoryRepository.getOrCreate).toHaveBeenCalledTimes(1);
       expect(categoryRepository.getOrCreate).toHaveBeenCalledWith(
@@ -214,7 +213,6 @@ describe('RestaurantService', () => {
       expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
         restaurantArgs.id,
         ownerArgs,
-        'delete',
       );
       expect(restaurantRepository.delete).toHaveBeenCalledTimes(1);
       expect(restaurantRepository.delete).toHaveBeenCalledWith({
@@ -500,7 +498,6 @@ describe('RestaurantService', () => {
       expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
         createDishArgs.restaurantId,
         ownerArgs,
-        'create a dish to',
       );
       expect(dishRepository.create).toHaveBeenCalledTimes(1);
       expect(dishRepository.create).toHaveBeenCalledWith({
@@ -579,7 +576,7 @@ describe('RestaurantService', () => {
 
       expect(result).toEqual({
         ok: false,
-        error: "You cannot edit a dish to a restaurant that you don't own",
+        error: 'You are not allowed to do this',
       });
     });
 
