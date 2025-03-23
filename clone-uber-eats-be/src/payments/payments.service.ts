@@ -7,6 +7,7 @@ import { CreatePaymentInput } from './dtos/create-payment.dto';
 import { CreateAccountOutput } from 'src/users/dtos/create-account.dto';
 import { RestaurantRepository } from 'src/restaurants/repositories/restaurant.repository';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
+import { GetPaymentsOutput } from './dtos/get-payments.dto';
 
 @Injectable()
 export class PaymentService {
@@ -36,6 +37,29 @@ export class PaymentService {
       return {
         ok: false,
         error: 'Could not create payment',
+      };
+    }
+  }
+
+  async getPayments(owner: User): Promise<GetPaymentsOutput> {
+    try {
+      const payments = await this.payments.findBy({
+        user: { id: owner.id },
+      });
+      if (!payments) {
+        return {
+          ok: false,
+          error: 'Payments not found',
+        };
+      }
+      return {
+        ok: true,
+        payments,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not get payments',
       };
     }
   }
