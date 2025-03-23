@@ -91,7 +91,6 @@ export class OrderService {
         );
         orderItems.push(orderItem);
       }
-      console.log(orderFinalPrice);
       const order = await this.orders.save(
         this.orders.create({
           customer,

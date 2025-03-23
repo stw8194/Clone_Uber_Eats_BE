@@ -47,11 +47,7 @@ describe('RestaurantRepository', () => {
     };
     it('should fail if restaurant not found', async () => {
       findOneBySpy(undefined);
-      const result = await repository.findAndCheck(
-        ownerArgs.id,
-        ownerArgs,
-        'test',
-      );
+      const result = await repository.findAndCheck(ownerArgs.id, ownerArgs);
       expect(repository.findOneBy).toHaveBeenCalledTimes(1);
       expect(repository.findOneBy).toHaveBeenCalledWith({ id: ownerArgs.id });
       expect(result).toEqual({
@@ -70,21 +66,16 @@ describe('RestaurantRepository', () => {
       const result = await repository.findAndCheck(
         otherRestaurantArgs.ownerId,
         ownerArgs,
-        'test',
       );
       expect(result).toEqual({
         ok: false,
-        error: "You cannot test a restaurant that you don't own",
+        error: 'You are not allowed to do this',
       });
     });
 
     it('should return restaurant', async () => {
       findOneBySpy(restaurantArgs);
-      const result = await repository.findAndCheck(
-        ownerArgs.id,
-        ownerArgs,
-        'test',
-      );
+      const result = await repository.findAndCheck(ownerArgs.id, ownerArgs);
       expect(result).toEqual(restaurantArgs);
     });
   });
