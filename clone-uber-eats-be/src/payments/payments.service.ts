@@ -76,10 +76,12 @@ export class PaymentService {
       isPromoted: true,
       promtedUntil: LessThan(new Date()),
     });
-    restaurants.forEach(async (restaurant) => {
-      restaurant.isPromoted = false;
-      restaurant.promtedUntil = null;
-      await this.restaurants.save(restaurant);
-    });
+    if (restaurants) {
+      restaurants.forEach(async (restaurant) => {
+        restaurant.isPromoted = false;
+        restaurant.promtedUntil = null;
+        await this.restaurants.save(restaurant);
+      });
+    }
   }
 }
