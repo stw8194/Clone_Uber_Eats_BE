@@ -20,6 +20,7 @@ import { OrderItem } from './orders/entities/order-item.entity';
 import { CommonModule } from './common/common.module';
 import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -77,10 +78,7 @@ import { Payment } from './payments/entities/payment.entity';
         };
       },
     }),
-    CommonModule,
-    AuthModule,
-    UsersModule,
-    RestaurantsModule,
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
@@ -89,6 +87,10 @@ import { Payment } from './payments/entities/payment.entity';
       domain: process.env.MAILGUN_DOMAIN,
       fromEmail: process.env.MAILGUN_FROM_EMAIL,
     }),
+    CommonModule,
+    AuthModule,
+    UsersModule,
+    RestaurantsModule,
     OrdersModule,
     PaymentsModule,
   ],
