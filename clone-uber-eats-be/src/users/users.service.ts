@@ -110,7 +110,6 @@ export class UserService {
         this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
-        console.log(password);
         user.password = password;
       }
       await this.users.save(user);
