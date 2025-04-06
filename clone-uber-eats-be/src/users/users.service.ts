@@ -101,12 +101,6 @@ export class UserService {
     try {
       const user = await this.users.findOneBy({ id: userId });
       if (email) {
-        if (email == user.email) {
-          return {
-            ok: false,
-            error: 'You cannot use your current email address',
-          };
-        }
         user.email = email;
         user.verified = false;
         await this.verifications.delete({ user: { id: user.id } });
@@ -116,6 +110,7 @@ export class UserService {
         this.mailService.sendVerificationEmail(user.email, verification.code);
       }
       if (password) {
+        console.log(password);
         user.password = password;
       }
       await this.users.save(user);

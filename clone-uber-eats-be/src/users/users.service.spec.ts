@@ -185,27 +185,6 @@ describe('UserService', () => {
   });
 
   describe('editProfile', () => {
-    it('should fail if email already in use', async () => {
-      const oldUser = {
-        email: 'old',
-        verified: true,
-      };
-      const editProfileArgs = {
-        userId: 1,
-        input: { email: 'old' },
-      };
-      userRepository.findOneBy.mockResolvedValue(oldUser);
-
-      const result = await service.editProfile(
-        editProfileArgs.userId,
-        editProfileArgs.input,
-      );
-      expect(result).toEqual({
-        ok: false,
-        error: 'You cannot use your current email address',
-      });
-    });
-
     it('should change email', async () => {
       const oldUser = {
         email: 'old',
