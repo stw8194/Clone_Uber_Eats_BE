@@ -181,14 +181,14 @@ export class RestaurantService {
     limit,
   }: RestaurantsInput): Promise<RestaurantsOutput> {
     try {
-      const [restaurants, totalResults] = await this.restaurants.findAndCount({
+      const [results, totalResults] = await this.restaurants.findAndCount({
         take: limit,
         skip: (page - 1) * limit,
         order: {
           isPromoted: 'DESC',
         },
       });
-      if (!restaurants) {
+      if (!results) {
         return {
           ok: false,
           error: 'Restaurants not found',
@@ -196,7 +196,7 @@ export class RestaurantService {
       }
       return {
         ok: true,
-        restaurants,
+        results,
         totalPages: Math.ceil(totalResults / limit),
         totalResults,
       };
