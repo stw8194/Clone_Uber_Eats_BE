@@ -4,10 +4,6 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { DataSource } from 'typeorm';
 import { UserRole } from 'src/users/entities/user.entity';
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql';
 import { RestaurantRepository } from 'src/restaurants/repositories/restaurant.repository';
 
 jest.mock('got', () => {
@@ -44,8 +40,6 @@ const testRestaurants = {
 };
 
 describe('PaymentModule (e2e)', () => {
-  jest.setTimeout(20000);
-  let postgresContainer: StartedPostgreSqlContainer;
   let app: INestApplication;
   let restaurantRepository: RestaurantRepository;
   let testClientJwtToken: string;
@@ -110,8 +104,6 @@ describe('PaymentModule (e2e)', () => {
   };
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer().start();
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -136,8 +128,6 @@ describe('PaymentModule (e2e)', () => {
     await dataSource.dropDatabase();
     await dataSource.destroy();
     await app.close();
-
-    await postgresContainer.stop();
   });
 
   describe('createPayment', () => {

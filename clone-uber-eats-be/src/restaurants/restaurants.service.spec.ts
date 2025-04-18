@@ -10,6 +10,7 @@ import { Restaurant } from './entities/restaurant.entity';
 
 const mockRepository = () => ({
   find: jest.fn(),
+  findBy: jest.fn(),
   findOne: jest.fn(),
   findOneBy: jest.fn(),
   findAndCount: jest.fn(),
@@ -136,6 +137,28 @@ describe('RestaurantService', () => {
       expect(result).toEqual({
         ok: false,
         error: 'Could not create restaurant',
+      });
+    });
+  });
+
+  describe('myRestaurants', () => {
+    it('should show all restaurants owner own', async () => {
+      restaurantRepository.findBy.mockResolvedValue(restaurantArgs);
+      const result = await service.myRestaurants(ownerArgs);
+
+      expect(restaurantRepository.findBy).toHaveBeenCalledTimes(1);
+      expect(restaurantRepository.findBy).toHaveBeenCalledWith({
+        ownerId: ownerArgs.id,
+      });
+      expect(result).toEqual({ ok: true, restaurants: restaurantArgs });
+    });
+
+    it('fail on exception', async () => {
+      restaurantRepository.findBy.mockRejectedValue(new Error());
+      const result = await service.myRestaurants(ownerArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not load restaurants',
       });
     });
   });
@@ -379,7 +402,7 @@ describe('RestaurantService', () => {
 
       expect(result).toEqual({
         ok: true,
-        restaurants: restaurantsArgs,
+        results: restaurantsArgs,
         totalPages: Math.ceil(totalResults / findRestaurantsArgs.limit),
         totalResults,
       });

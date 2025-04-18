@@ -6,10 +6,6 @@ import { DataSource, Repository } from 'typeorm';
 import { RestaurantRepository } from 'src/restaurants/repositories/restaurant.repository';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { UserRole } from 'src/users/entities/user.entity';
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 jest.mock('got', () => {
@@ -55,8 +51,6 @@ const TEST_PAGE = 2;
 const TEST_LIMIT = 5;
 
 describe('RestaurantModule (e2e)', () => {
-  jest.setTimeout(10000);
-  let postgresContainer: StartedPostgreSqlContainer;
   let app: INestApplication;
   let restaurantRepository: RestaurantRepository;
   let dishRepository: Repository<Dish>;
@@ -104,8 +98,6 @@ describe('RestaurantModule (e2e)', () => {
   };
 
   beforeAll(async () => {
-    postgresContainer = await new PostgreSqlContainer().start();
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -130,8 +122,6 @@ describe('RestaurantModule (e2e)', () => {
     await dataSource.dropDatabase();
     await dataSource.destroy();
     await app.close();
-
-    await postgresContainer.stop();
   });
 
   describe('createRestaurant', () => {
@@ -239,6 +229,42 @@ describe('RestaurantModule (e2e)', () => {
               slug: 'categoryname',
             },
           });
+        });
+    });
+  });
+
+  describe('myRestaurants', () => {
+    it('should return all restaurnats owner own', async () => {
+      return privateTest(
+        `
+        {
+          myRestaurants {
+            ok
+            error
+            restaurants {
+              name
+            }
+          }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                myRestaurants: { ok, error, restaurants },
+              },
+            },
+          } = res;
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurants).toStrictEqual([
+            {
+              name: testRestaurant.name,
+            },
+          ]);
         });
     });
   });
@@ -388,7 +414,7 @@ describe('RestaurantModule (e2e)', () => {
         }) {
           ok
           error
-          restaurants {
+          results {
             name  
           }
           totalPages
@@ -400,13 +426,7 @@ describe('RestaurantModule (e2e)', () => {
           const {
             body: {
               data: {
-                restaurants: {
-                  ok,
-                  error,
-                  restaurants,
-                  totalPages,
-                  totalResults,
-                },
+                restaurants: { ok, error, results, totalPages, totalResults },
               },
             },
           } = res;
@@ -420,7 +440,7 @@ describe('RestaurantModule (e2e)', () => {
 
           expect(ok).toBe(true);
           expect(error).toBe(null);
-          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(results).toEqual(expectedNames.map((name) => ({ name })));
           expect(totalPages).toBe(2);
           expect(totalResults).toBe(10);
         });
@@ -436,7 +456,7 @@ describe('RestaurantModule (e2e)', () => {
         }) {
           ok
           error
-          restaurants {
+          results {
             name  
           }
           totalPages
@@ -448,13 +468,7 @@ describe('RestaurantModule (e2e)', () => {
           const {
             body: {
               data: {
-                restaurants: {
-                  ok,
-                  error,
-                  restaurants,
-                  totalPages,
-                  totalResults,
-                },
+                restaurants: { ok, error, results, totalPages, totalResults },
               },
             },
           } = res;
@@ -468,7 +482,7 @@ describe('RestaurantModule (e2e)', () => {
 
           expect(ok).toBe(true);
           expect(error).toBe(null);
-          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(results).toEqual(expectedNames.map((name) => ({ name })));
           expect(totalPages).toBe(2);
           expect(totalResults).toBe(10);
         });

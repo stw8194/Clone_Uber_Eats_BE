@@ -26,6 +26,7 @@ import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import { Dish } from './entities/dish.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EditDishInput, EditDishOutput } from './dtos/edit-dish.dto';
+import { MyRestaurantsOutput } from 'src/orders/dtos/my-restaurants.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -53,6 +54,23 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not create restaurant',
+      };
+    }
+  }
+
+  async myRestaurants(owner: User): Promise<MyRestaurantsOutput> {
+    try {
+      const restaurants = await this.restaurants.findBy({
+        owner: { id: owner.id },
+      });
+      return {
+        ok: true,
+        restaurants,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load restaurants',
       };
     }
   }
