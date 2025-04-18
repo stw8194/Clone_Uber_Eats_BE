@@ -33,7 +33,7 @@ export class PaymentService {
       restaurant.isPromoted = true;
       const date = new Date();
       date.setDate(date.getDate() + 7);
-      restaurant.promtedUntil = date;
+      restaurant.promotedUntil = date;
       await this.restaurants.save(restaurant);
       await this.payments.save(
         this.payments.create({ transactionId, user: owner, restaurant }),
@@ -74,12 +74,12 @@ export class PaymentService {
   async checkPromtedRestaurants() {
     const restaurants = await this.restaurants.findBy({
       isPromoted: true,
-      promtedUntil: LessThan(new Date()),
+      promotedUntil: LessThan(new Date()),
     });
     if (restaurants) {
       restaurants.forEach(async (restaurant) => {
         restaurant.isPromoted = false;
-        restaurant.promtedUntil = null;
+        restaurant.promotedUntil = null;
         await this.restaurants.save(restaurant);
       });
     }

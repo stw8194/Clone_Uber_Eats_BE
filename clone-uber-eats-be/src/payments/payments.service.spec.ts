@@ -112,7 +112,7 @@ describe('PaymentService', () => {
         user: ownerArgs,
         restaurant: restaurantArgs,
       });
-      restaurantArgs.promtedUntil = new Date('2024-01-08T12:00:00Z');
+      restaurantArgs.promotedUntil = new Date('2024-01-08T12:00:00Z');
       restaurantArgs.isPromoted = true;
       const result = await service.createPayment(ownerArgs, createPaymentArgs);
 
@@ -191,7 +191,7 @@ describe('PaymentService', () => {
         address: '',
         ownerId: '',
         isPromoted: true,
-        promtedUntil: new Date('2023-01-01T12:00:00Z'),
+        promotedUntil: new Date('2023-01-01T12:00:00Z'),
       },
       {
         id: 3,
@@ -200,7 +200,7 @@ describe('PaymentService', () => {
         address: '',
         ownerId: '',
         isPromoted: true,
-        promtedUntil: new Date('2023-01-01T12:00:00Z'),
+        promotedUntil: new Date('2023-01-01T12:00:00Z'),
       },
     ];
 
@@ -218,7 +218,7 @@ describe('PaymentService', () => {
       expect(restaurantRepository.findBy).toHaveBeenCalledTimes(1);
       expect(restaurantRepository.findBy).toHaveBeenCalledWith({
         isPromoted: true,
-        promtedUntil: LessThan(new Date()),
+        promotedUntil: LessThan(new Date()),
       });
       expect(restaurantRepository.save).toHaveBeenCalledTimes(2);
       expect(restaurantRepository.save).toHaveBeenNthCalledWith(
