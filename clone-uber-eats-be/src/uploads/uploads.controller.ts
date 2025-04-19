@@ -21,19 +21,29 @@ export class UploadsController {
     });
     try {
       const objectName = Date.now() + file.originalname;
-      await new AWS.S3()
-        .putObject({
-          Body: file.buffer,
-          Bucket: process.env.AWS_S3_BUCKET_NAME,
-          Key: objectName,
-        })
-        .promise();
-      const encodedFileName = encodeURIComponent(objectName);
-      const url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${encodedFileName}`;
-      return { url };
+      const allowedMimeTypes = [
+        'image/jpg',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+      ];
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        await new AWS.S3()
+          .putObject({
+            Body: file.buffer,
+            Bucket: process.env.AWS_S3_BUCKET_NAME,
+            Key: objectName,
+          })
+          .promise();
+        const encodedFileName = encodeURIComponent(objectName);
+        const url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${encodedFileName}`;
+        return { url };
+      } else {
+        return { error: 'Only Image file allowed' };
+      }
     } catch (error) {
       console.log(error);
-      return null;
+      return { error };
     }
   }
 }
