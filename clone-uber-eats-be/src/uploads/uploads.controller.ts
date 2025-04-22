@@ -10,7 +10,13 @@ import * as AWS from 'aws-sdk';
 @Controller('uploads')
 export class UploadsController {
   @Post('')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+    }),
+  )
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     AWS.config.update({
       credentials: {
