@@ -25,7 +25,9 @@ export class AuthGuard implements CanActivate {
     if (token) {
       const decoded = this.jwtService.verify(token.toString());
       if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
-        const { user } = await this.userService.findById(decoded.id);
+        const { user } = await this.userService.findById({
+          userId: decoded.id,
+        });
         if (!user) {
           return false;
         }

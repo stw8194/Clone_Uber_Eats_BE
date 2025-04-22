@@ -10,7 +10,10 @@ import {
   EditRestaurantOutput,
 } from './dtos/edit-restaurant.dto';
 import { CategoryRepository } from './repositories/category.repository';
-import { DeleteRestaurantOutput } from './dtos/delete-restaurant.dto';
+import {
+  DeleteRestaurantInput,
+  DeleteRestaurantOutput,
+} from './dtos/delete-restaurant.dto';
 import { RestaurantRepository } from './repositories/restaurant.repository';
 import { Restaurant } from './entities/restaurant.entity';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
@@ -26,7 +29,11 @@ import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import { Dish } from './entities/dish.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EditDishInput, EditDishOutput } from './dtos/edit-dish.dto';
-import { MyRestaurantsOutput } from 'src/orders/dtos/my-restaurants.dto';
+import { MyRestaurantsOutput } from './dtos/my-restaurants.dto';
+import {
+  MyRestaurantInput,
+  MyRestaurantOutput,
+} from './dtos/my-restaurant.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -78,6 +85,27 @@ export class RestaurantService {
     }
   }
 
+  async myRestaurant(
+    owner: User,
+    { restaurantId }: MyRestaurantInput,
+  ): Promise<MyRestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOneBy({
+        id: restaurantId,
+        owner: { id: owner.id },
+      });
+      return {
+        ok: true,
+        restaurant,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not load restaurant',
+      };
+    }
+  }
+
   async editRestaurant(
     owner: User,
     editRestaurantInput: EditRestaurantInput,
@@ -113,7 +141,7 @@ export class RestaurantService {
 
   async deleteRestaurant(
     owner: User,
-    restaurantId: number,
+    { restaurantId }: DeleteRestaurantInput,
   ): Promise<DeleteRestaurantOutput> {
     try {
       const restaurant = await this.restaurants.findAndCheck(

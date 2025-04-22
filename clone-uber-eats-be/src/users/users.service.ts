@@ -11,7 +11,7 @@ import { JwtService } from 'src/jwt/jwt.service';
 import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { Verification } from './entities/verification.entity';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
-import { UserProfileOutput } from './dtos/user-profile.dto';
+import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
@@ -82,9 +82,9 @@ export class UserService {
     }
   }
 
-  async findById(id: number): Promise<UserProfileOutput> {
+  async findById({ userId }: UserProfileInput): Promise<UserProfileOutput> {
     try {
-      const user = await this.users.findOneByOrFail({ id });
+      const user = await this.users.findOneByOrFail({ id: userId });
       return {
         ok: true,
         user,

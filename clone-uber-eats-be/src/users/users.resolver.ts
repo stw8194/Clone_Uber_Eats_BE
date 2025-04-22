@@ -39,7 +39,7 @@ export class UserResolver {
   userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
-    return this.userService.findById(userProfileInput.userId);
+    return this.userService.findById(userProfileInput);
   }
 
   @Mutation((returns) => EditProfileOutput)

@@ -16,7 +16,7 @@ import {
   PUB_SUB,
 } from 'src/common/common.constants';
 import { PubSub } from 'graphql-subscriptions';
-import { OrderUpdatesInput } from './dtos/order-updates';
+import { OrderUpdatesInput } from './dtos/order-updates.dto';
 import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
 
 @Resolver((of) => Order)
