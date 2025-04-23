@@ -1,5 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { IsNumber, IsString, Length } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entites/core.entity';
 import { Column, Entity, ManyToMany, ManyToOne, RelationId } from 'typeorm';
 import { Restaurant } from './restaurant.entity';
@@ -46,11 +46,12 @@ export class Dish extends CoreEntity {
   @IsString()
   photo?: string;
 
-  @Column()
-  @Field((type) => String)
+  @Column({ nullable: true })
+  @Field((type) => String, { nullable: true })
   @IsString()
-  @Length(5, 100)
-  description: string;
+  @IsOptional()
+  @Length(0, 100)
+  description?: string;
 
   @Field((type) => Restaurant)
   @ManyToOne((type) => Restaurant, (restaurant) => restaurant.menu, {
