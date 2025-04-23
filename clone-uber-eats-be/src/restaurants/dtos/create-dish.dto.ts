@@ -14,4 +14,7 @@ export class CreateDishInput extends PickType(Dish, [
 }
 
 @ObjectType()
-export class CreateDishOutput extends CoreOutput {}
+export class CreateDishOutput extends CoreOutput {
+  @Field((type) => Number, { nullable: true })
+  dishId?: number;
+}

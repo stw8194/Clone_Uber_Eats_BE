@@ -90,9 +90,12 @@ export class RestaurantService {
     { restaurantId }: MyRestaurantInput,
   ): Promise<MyRestaurantOutput> {
     try {
-      const restaurant = await this.restaurants.findOneBy({
-        id: restaurantId,
-        owner: { id: owner.id },
+      const restaurant = await this.restaurants.findOne({
+        where: {
+          id: restaurantId,
+          owner: { id: owner.id },
+        },
+        relations: ['menu'],
       });
       return {
         ok: true,
@@ -326,11 +329,11 @@ export class RestaurantService {
       if (!(restaurant instanceof Restaurant)) {
         return restaurant;
       }
-      await this.dishes.save(
-        this.dishes.create({ ...createDishInput, restaurant }),
-      );
+      const dish = this.dishes.create({ ...createDishInput, restaurant });
+      await this.dishes.save(dish);
       return {
         ok: true,
+        dishId: dish.id,
       };
     } catch {
       return {
