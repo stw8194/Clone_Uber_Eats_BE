@@ -1,5 +1,7 @@
 import {
   Controller,
+  Delete,
+  Param,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -50,6 +52,33 @@ export class UploadsController {
     } catch (error) {
       console.log(error);
       return { error };
+    }
+  }
+
+  @Delete(':fileName')
+  async deleteFile(@Param('fileName') fileName: string) {
+    AWS.config.update({
+      credentials: {
+        accessKeyId: process.env.AWS_S3_ACCESS_KEY,
+        secretAccessKey: process.env.AWS_S3_SECRET_ACCESS_KEY,
+      },
+      region: process.env.AWS_S3_REGION,
+    });
+
+    try {
+      const decodedFileName = decodeURIComponent(fileName);
+
+      await new AWS.S3()
+        .deleteObject({
+          Bucket: process.env.AWS_S3_BUCKET_NAME,
+          Key: decodedFileName,
+        })
+        .promise();
+
+      return { message: 'File deleted successfully' };
+    } catch (error) {
+      console.log(error);
+      return { error: 'Failed to delete the file' };
     }
   }
 }
