@@ -95,7 +95,7 @@ export class RestaurantService {
           id: restaurantId,
           owner: { id: owner.id },
         },
-        relations: ['menu'],
+        relations: ['menu', 'orders'],
       });
       return {
         ok: true,
