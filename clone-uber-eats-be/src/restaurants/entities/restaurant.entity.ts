@@ -1,5 +1,5 @@
-import { Field, InputType, ObjectType } from '@nestjs/graphql';
-import { IsString } from 'class-validator';
+import { Field, Float, InputType, ObjectType } from '@nestjs/graphql';
+import { IsNumber, IsString } from 'class-validator';
 import { CoreEntity } from 'src/common/entites/core.entity';
 import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
 import { Category } from './category.entity';
@@ -25,6 +25,16 @@ export class Restaurant extends CoreEntity {
   @Field((type) => String)
   @IsString()
   address: string;
+
+  @Column()
+  @Field((type) => Float)
+  @IsNumber()
+  lat: number;
+
+  @Column()
+  @Field((type) => Float)
+  @IsNumber()
+  lng: number;
 
   @Field((type) => Category, { nullable: true })
   @ManyToOne((type) => Category, (category) => category.restaurants, {
