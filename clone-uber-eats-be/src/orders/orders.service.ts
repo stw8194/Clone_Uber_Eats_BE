@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { User, UserRole } from 'src/users/entities/user.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
@@ -125,14 +125,14 @@ export class OrderService {
         orders = await this.orders.find({
           where: {
             customer: user,
-            status,
+            status: In(status),
           },
         });
       } else if (user.role === UserRole.Delivery) {
         orders = await this.orders.find({
           where: {
             driver: user,
-            status,
+            status: In(status),
           },
         });
       } else if (user.role === UserRole.Owner) {
@@ -144,7 +144,7 @@ export class OrderService {
         });
         orders = restaurants.map((restaurant) => restaurant.orders).flat(1);
         if (status) {
-          orders = orders.filter((order) => order.status === status);
+          orders = orders.filter((order) => status.includes(order.status));
         }
       }
       return {
