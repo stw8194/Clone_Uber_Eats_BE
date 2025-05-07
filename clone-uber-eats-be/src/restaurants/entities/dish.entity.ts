@@ -44,6 +44,7 @@ export class Dish extends CoreEntity {
   @Column({ nullable: true })
   @Field((type) => String, { nullable: true })
   @IsString()
+  @IsOptional()
   photo?: string;
 
   @Column({ nullable: true })
