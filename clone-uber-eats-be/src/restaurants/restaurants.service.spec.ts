@@ -80,6 +80,13 @@ describe('RestaurantService', () => {
     },
   ];
 
+  const dishArgs = {
+    id: 1,
+    name: '',
+    price: 1,
+    restaurant: restaurantArgs,
+  };
+
   const totalResults = restaurantsArgs.length;
 
   const categoryArgs = {
@@ -98,6 +105,8 @@ describe('RestaurantService', () => {
       coverImg: '',
       address: '',
       categoryName: '',
+      lat: 37.123,
+      lng: 123.1234,
     };
 
     it('should create a new restaurant', async () => {
@@ -148,7 +157,7 @@ describe('RestaurantService', () => {
 
       expect(restaurantRepository.findBy).toHaveBeenCalledTimes(1);
       expect(restaurantRepository.findBy).toHaveBeenCalledWith({
-        ownerId: ownerArgs.id,
+        owner: { id: ownerArgs.id },
       });
       expect(result).toEqual({ ok: true, restaurants: restaurantArgs });
     });
@@ -227,10 +236,9 @@ describe('RestaurantService', () => {
   describe('deleteRestaurant', () => {
     it('should delete restaurant', async () => {
       restaurantRepository.findAndCheck.mockResolvedValue(restaurantArgs);
-      const result = await service.deleteRestaurant(
-        ownerArgs,
-        restaurantArgs.id,
-      );
+      const result = await service.deleteRestaurant(ownerArgs, {
+        restaurantId: restaurantArgs.id,
+      });
 
       expect(restaurantRepository.findAndCheck).toHaveBeenCalledTimes(1);
       expect(restaurantRepository.findAndCheck).toHaveBeenCalledWith(
@@ -249,10 +257,9 @@ describe('RestaurantService', () => {
         ok: false,
         error: 'error',
       });
-      const result = await service.deleteRestaurant(
-        ownerArgs,
-        restaurantArgs.id,
-      );
+      const result = await service.deleteRestaurant(ownerArgs, {
+        restaurantId: restaurantArgs.id,
+      });
       expect(result).toEqual({
         ok: false,
         error: 'error',
@@ -261,10 +268,9 @@ describe('RestaurantService', () => {
 
     it('fail on exception', async () => {
       restaurantRepository.findAndCheck.mockRejectedValue(new Error());
-      const result = await service.deleteRestaurant(
-        ownerArgs,
-        restaurantArgs.id,
-      );
+      const result = await service.deleteRestaurant(ownerArgs, {
+        restaurantId: restaurantArgs.id,
+      });
       expect(result).toEqual({
         ok: false,
         error: 'Could not delete restaurant',
@@ -561,6 +567,69 @@ describe('RestaurantService', () => {
       expect(result).toEqual({
         ok: false,
         error: 'Could not create dish',
+      });
+    });
+  });
+
+  describe('findDishById', () => {
+    const findDishArgs = {
+      restaurantId: 1,
+      dishId: 1,
+    };
+    it('should fail if dish not found', async () => {
+      dishRepository.findOne.mockResolvedValue(undefined);
+
+      const result = await service.findDishById(ownerArgs, findDishArgs);
+
+      expect(dishRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(dishRepository.findOne).toHaveBeenCalledWith({
+        where: {
+          restaurant: { id: findDishArgs.restaurantId },
+          id: findDishArgs.dishId,
+        },
+        relations: ['restaurant'],
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Dish not found',
+      });
+    });
+
+    it("should fail if owner don't own dish", async () => {
+      const fakeOwnerArgs = {
+        id: 2,
+        email: '',
+        role: UserRole.Owner,
+        verified: true,
+      } as User;
+      dishRepository.findOne.mockResolvedValue(dishArgs);
+
+      const result = await service.findDishById(fakeOwnerArgs, findDishArgs);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'This dish is not belongs to your restaurant',
+      });
+    });
+
+    it('should find dish by id', async () => {
+      dishRepository.findOne.mockResolvedValue(dishArgs);
+
+      const result = await service.findDishById(ownerArgs, findDishArgs);
+
+      expect(result).toEqual({
+        ok: true,
+        dish: dishArgs,
+      });
+    });
+
+    it('should fail on exception', async () => {
+      dishRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.findDishById(ownerArgs, findDishArgs);
+
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not find dish',
       });
     });
   });

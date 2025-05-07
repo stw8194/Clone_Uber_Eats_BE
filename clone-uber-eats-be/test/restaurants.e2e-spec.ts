@@ -39,6 +39,8 @@ const testRestaurant = {
   coverImg: 'coverImg',
   address: 'address',
   categoryName: 'categoryName',
+  lat: 37.123456,
+  lng: 123.456789,
 };
 
 const testDish = {
@@ -134,6 +136,8 @@ describe('RestaurantModule (e2e)', () => {
                     coverImg: "${testRestaurant.coverImg}"
                     address: "${testRestaurant.address}"
                     categoryName: "${testRestaurant.categoryName}"
+                    lat:${testRestaurant.lat}
+                    lng:${testRestaurant.lng}
                 }) {
                 ok
                 error
@@ -164,6 +168,8 @@ describe('RestaurantModule (e2e)', () => {
                     coverImg: "${testRestaurant.coverImg}"
                     address: "${testRestaurant.address}"
                     categoryName: "${testRestaurant.categoryName}"
+                    lat:${testRestaurant.lat}
+                    lng:${testRestaurant.lng}
                 }) {
                 ok
                 error
@@ -393,6 +399,8 @@ describe('RestaurantModule (e2e)', () => {
                     coverImg: "${testRestaurant.coverImg} number${seq}"
                     address: "${testRestaurant.address} number${seq}"
                     categoryName: "${testRestaurant.categoryName}"
+                    lat:${testRestaurant.lat}
+                    lng:${testRestaurant.lng}
                 }) {
                 ok
                 error
@@ -654,6 +662,46 @@ describe('RestaurantModule (e2e)', () => {
             body: {
               data: {
                 createDish: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+  });
+
+  describe('myDish', () => {
+    let restaurantId: number;
+    let dishId: number;
+    beforeAll(async () => {
+      const [restaurant] = await restaurantRepository.find();
+      restaurantId = restaurant.id;
+      const [dish] = await dishRepository.find();
+      dishId = dish.id;
+    });
+
+    it('should find dish by id', async () => {
+      return privateTest(
+        `
+        {
+          myDish(input:{
+            restaurantId: ${restaurantId}
+            dishId: ${dishId}
+          }  
+       ) {
+            ok
+            error
+          }
+        }`,
+        testRealOwnerJwtToken,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                myDish: { ok, error },
               },
             },
           } = res;

@@ -32,11 +32,13 @@ const testFakeOwner = {
   role: UserRole.Owner,
 };
 
-const testRestaurants = {
-  name: 'burger',
+const testRestaurant = {
+  name: 'name',
   coverImg: 'coverImg',
   address: 'address',
   categoryName: 'categoryName',
+  lat: 37.123456,
+  lng: 123.456789,
 };
 
 describe('PaymentModule (e2e)', () => {
@@ -94,6 +96,8 @@ describe('PaymentModule (e2e)', () => {
                     coverImg: "${testRestaurant.coverImg}"
                     address: "${testRestaurant.address}"
                     categoryName: "${testRestaurant.categoryName}"
+                    lat:${testRestaurant.lat}
+                    lng:${testRestaurant.lng}
                 }) {
                 ok
                 error
@@ -119,7 +123,7 @@ describe('PaymentModule (e2e)', () => {
     testRealOwnerJwtToken = await getJwtToken(testRealOwner);
     testFakeOwnerJwtToken = await getJwtToken(testFakeOwner);
 
-    await createRestaurant(testRestaurants, testRealOwnerJwtToken);
+    await createRestaurant(testRestaurant, testRealOwnerJwtToken);
   });
 
   afterAll(async () => {

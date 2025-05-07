@@ -26,12 +26,12 @@ export class Restaurant extends CoreEntity {
   @IsString()
   address: string;
 
-  @Column()
+  @Column({ type: 'double precision' })
   @Field((type) => Float)
   @IsNumber()
   lat: number;
 
-  @Column()
+  @Column({ type: 'double precision' })
   @Field((type) => Float)
   @IsNumber()
   lng: number;

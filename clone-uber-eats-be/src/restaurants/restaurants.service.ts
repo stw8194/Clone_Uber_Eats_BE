@@ -34,6 +34,7 @@ import {
   MyRestaurantInput,
   MyRestaurantOutput,
 } from './dtos/my-restaurant.dto';
+import { MyDishInput, MyDishOutput } from './dtos/my-dish.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -339,6 +340,42 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not create dish',
+      };
+    }
+  }
+
+  async findDishById(
+    owner: User,
+    myDishInput: MyDishInput,
+  ): Promise<MyDishOutput> {
+    try {
+      const dish = await this.dishes.findOne({
+        where: {
+          restaurant: { id: myDishInput.restaurantId },
+          id: myDishInput.dishId,
+        },
+        relations: ['restaurant'],
+      });
+      if (!dish) {
+        return {
+          ok: false,
+          error: 'Dish not found',
+        };
+      }
+      if (dish.restaurant.ownerId === owner.id) {
+        return {
+          ok: true,
+          dish,
+        };
+      }
+      return {
+        ok: false,
+        error: 'This dish is not belongs to your restaurant',
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find dish',
       };
     }
   }
