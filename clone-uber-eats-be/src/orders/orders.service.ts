@@ -166,7 +166,7 @@ export class OrderService {
         if (order.customerId !== user.id) allowed = false;
         break;
       case UserRole.Delivery:
-        if (order.driverId !== user.id) allowed = false;
+        if (order.driverId && order.driverId !== user.id) allowed = false;
         break;
       case UserRole.Owner:
         if (order.restaurant.ownerId !== user.id) allowed = false;

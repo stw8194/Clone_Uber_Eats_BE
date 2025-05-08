@@ -324,7 +324,7 @@ describe('RestaurantService', () => {
     it('should get orders with same status', async () => {
       restaurantRepository.find.mockResolvedValue([restaurantArgs]);
       const result = await service.getOrders(ownerArgs, {
-        status: getOrdersArgs.status,
+        status: [getOrdersArgs.status],
       });
 
       expect(restaurantRepository.find).toHaveBeenCalledTimes(1);
