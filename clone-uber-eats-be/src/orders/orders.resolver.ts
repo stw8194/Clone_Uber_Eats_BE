@@ -6,7 +6,6 @@ import { AuthUser } from 'src/auth/auth-user.decorator';
 import { User } from 'src/users/entities/user.entity';
 import { Role } from 'src/auth/role.decorator';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
-import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { Inject } from '@nestjs/common';
 import {
@@ -18,6 +17,11 @@ import {
 import { PubSub } from 'graphql-subscriptions';
 import { OrderUpdatesInput } from './dtos/order-updates.dto';
 import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
+import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+import {
+  GetOrderByDriverIdInput,
+  GetOrderByDriverIdOutput,
+} from './dtos/get-order-by-driver.dto';
 
 @Resolver((of) => Order)
 export class OrderResolver {
@@ -52,6 +56,18 @@ export class OrderResolver {
     @Args('input') getOrderInput: GetOrderInput,
   ): Promise<GetOrderOutput> {
     return this.orderService.getOrder(user, getOrderInput);
+  }
+
+  @Query((returns) => GetOrderByDriverIdOutput)
+  @Role(['Delivery'])
+  getOrderByDriverId(
+    @AuthUser() driver: User,
+    @Args('input') getOrderByDriverIdInput: GetOrderByDriverIdInput,
+  ): Promise<GetOrderOutput> {
+    return this.orderService.getOrderByDriverId(
+      driver,
+      getOrderByDriverIdInput,
+    );
   }
 
   @Mutation((returns) => EditOrderOutput)

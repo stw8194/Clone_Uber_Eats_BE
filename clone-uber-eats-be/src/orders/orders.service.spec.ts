@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { OrderService } from './orders.service';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -350,7 +350,7 @@ describe('RestaurantService', () => {
       expect(orderRepository.find).toHaveBeenCalledWith({
         where: {
           customer: customerArgs,
-          status: undefined,
+          status: In(undefined),
         },
       });
       expect(result).toEqual({
@@ -369,7 +369,7 @@ describe('RestaurantService', () => {
       expect(orderRepository.find).toHaveBeenCalledWith({
         where: {
           driver: driverArgs,
-          status: undefined,
+          status: In(undefined),
         },
       });
       expect(result).toEqual({
@@ -480,6 +480,58 @@ describe('RestaurantService', () => {
     });
   });
 
+  describe('getOrderByDriverId', () => {
+    it('should fail if order is not belongs to driver', async () => {
+      const result = await service.getOrderByDriverId(driverArgs, {
+        driverId: driverArgs.id + 1,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'This order is not belongs to you',
+      });
+    });
+
+    it('should fail if order not found', async () => {
+      orderRepository.findOne.mockResolvedValue(undefined);
+      const result = await service.getOrderByDriverId(driverArgs, {
+        driverId: driverArgs.id,
+      });
+
+      expect(orderRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(orderRepository.findOne).toHaveBeenCalledWith({
+        where: { driver: { id: driverArgs.id } },
+        relations: ['restaurant'],
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Order not found',
+      });
+    });
+
+    it('should get order', async () => {
+      orderRepository.findOne.mockResolvedValue(orderArgs);
+      const result = await service.getOrderByDriverId(driverArgs, {
+        driverId: driverArgs.id,
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        order: orderArgs,
+      });
+    });
+
+    it('fail on exception', async () => {
+      orderRepository.findOne.mockRejectedValue(new Error());
+      const result = await service.getOrderByDriverId(driverArgs, {
+        driverId: driverArgs.id,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not get order',
+      });
+    });
+  });
+
   describe('editOrder', () => {
     const ownerEditOrderArgs = {
       id: orderArgs.id,
@@ -527,7 +579,7 @@ describe('RestaurantService', () => {
 
     it.each(cases)(
       'should fail if $user.role try to change status except $syntax',
-      async ({ user, editArgs, syntax }) => {
+      async ({ user, editArgs }) => {
         orderRepository.findOneBy.mockResolvedValue(orderArgs);
         const result = await service.editOrder(user, editArgs);
 
@@ -553,7 +605,7 @@ describe('RestaurantService', () => {
 
     it.each(cases)(
       'should edit order if $user.role try to change status $syntax',
-      async ({ user, editArgs, syntax }) => {
+      async ({ user, editArgs }) => {
         orderRepository.findOneBy.mockResolvedValue(orderArgs);
         const result = await service.editOrder(user, editArgs);
 

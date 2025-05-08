@@ -8,7 +8,7 @@ import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
-import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import {
   NEW_COOKED_ORDER,
@@ -18,6 +18,11 @@ import {
 } from 'src/common/common.constants';
 import { PubSub } from 'graphql-subscriptions';
 import { TakeOrderInput, TakeOrderOutput } from './dtos/take-order.dto';
+import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
+import {
+  GetOrderByDriverIdInput,
+  GetOrderByDriverIdOutput,
+} from './dtos/get-order-by-driver.dto';
 
 @Injectable()
 export class OrderService {
@@ -297,6 +302,39 @@ export class OrderService {
       return {
         ok: false,
         error: 'Could not take order',
+      };
+    }
+  }
+
+  async getOrderByDriverId(
+    driver: User,
+    { driverId }: GetOrderByDriverIdInput,
+  ): Promise<GetOrderByDriverIdOutput> {
+    try {
+      if (driver.id !== driverId) {
+        return {
+          ok: false,
+          error: 'This order is not belongs to you',
+        };
+      }
+      const order = await this.orders.findOne({
+        where: { driver: { id: driverId } },
+        relations: ['restaurant'],
+      });
+      if (!order) {
+        return {
+          ok: false,
+          error: 'Order not found',
+        };
+      }
+      return {
+        ok: true,
+        order,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not get order',
       };
     }
   }
