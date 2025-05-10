@@ -12,6 +12,7 @@ import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Payment } from 'src/payments/entities/payment.entity';
+import { Address } from './client-address.entity';
 
 export enum UserRole {
   Client = 'Client',
@@ -39,6 +40,10 @@ export class User extends CoreEntity {
   @Field((type) => UserRole)
   @IsEnum(UserRole)
   role: UserRole;
+
+  @Field((type) => [Address], { nullable: true })
+  @OneToMany((type) => Address, (addresses) => addresses.client)
+  addresses?: Address[];
 
   @Column({ default: false })
   @Field((type) => Boolean)

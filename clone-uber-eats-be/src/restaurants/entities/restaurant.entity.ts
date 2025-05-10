@@ -1,7 +1,21 @@
-import { Field, Float, InputType, ObjectType } from '@nestjs/graphql';
+import {
+  Field,
+  Float,
+  HideField,
+  InputType,
+  ObjectType,
+} from '@nestjs/graphql';
 import { IsNumber, IsString } from 'class-validator';
 import { CoreEntity } from 'src/common/entites/core.entity';
-import { Column, Entity, ManyToOne, OneToMany, RelationId } from 'typeorm';
+import {
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  RelationId,
+} from 'typeorm';
 import { Category } from './category.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Dish } from './dish.entity';
@@ -36,6 +50,14 @@ export class Restaurant extends CoreEntity {
   @IsNumber()
   lng: number;
 
+  @HideField()
+  @Column({
+    type: 'geography',
+    spatialFeatureType: 'Point',
+    srid: 4326,
+  })
+  location: string;
+
   @Field((type) => Category, { nullable: true })
   @ManyToOne((type) => Category, (category) => category.restaurants, {
     nullable: true,
@@ -68,4 +90,10 @@ export class Restaurant extends CoreEntity {
   @Column({ nullable: true })
   @Field((type) => Date, { nullable: true })
   promotedUntil: Date;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  setLocation() {
+    this.location = `SRID=4326;POINT(${this.lng} ${this.lat})`;
+  }
 }

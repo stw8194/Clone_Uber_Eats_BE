@@ -24,7 +24,7 @@ import {
   SearchRestaurantInput,
   SearchRestaurantOutput,
 } from './dtos/search-restaurant.dto';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, Repository } from 'typeorm';
 import { CreateDishInput, CreateDishOutput } from './dtos/create-dish.dto';
 import { Dish } from './entities/dish.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -35,6 +35,10 @@ import {
   MyRestaurantOutput,
 } from './dtos/my-restaurant.dto';
 import { MyDishInput, MyDishOutput } from './dtos/my-dish.dto';
+import {
+  RestaurantsByDistanceInput,
+  RestaurantsByDistanceOutput,
+} from './dtos/restaurants-by-distance.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -43,6 +47,7 @@ export class RestaurantService {
     private readonly categories: CategoryRepository,
     @InjectRepository(Dish)
     private readonly dishes: Repository<Dish>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async createRestaurant(
@@ -229,6 +234,32 @@ export class RestaurantService {
     }
   }
 
+  async findRestaurantById({
+    restaurantId,
+  }: RestaurantInput): Promise<RestaurantOutput> {
+    try {
+      const restaurant = await this.restaurants.findOne({
+        where: { id: restaurantId },
+        relations: ['menu'],
+      });
+      if (!restaurant) {
+        return {
+          ok: false,
+          error: 'Restaurant not found',
+        };
+      }
+      return {
+        ok: true,
+        restaurant,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find restaurant',
+      };
+    }
+  }
+
   async allRestaurants({
     page,
     limit,
@@ -261,28 +292,35 @@ export class RestaurantService {
     }
   }
 
-  async findRestaurantById({
-    restaurantId,
-  }: RestaurantInput): Promise<RestaurantOutput> {
+  async findNearbyRestaurants({
+    page,
+    limit,
+    lat,
+    lng,
+  }: RestaurantsByDistanceInput): Promise<RestaurantsByDistanceOutput> {
     try {
-      const restaurant = await this.restaurants.findOne({
-        where: { id: restaurantId },
-        relations: ['menu'],
-      });
-      if (!restaurant) {
-        return {
-          ok: false,
-          error: 'Restaurant not found',
-        };
-      }
+      const radius = 3000;
+      const offset = (page - 1) * limit;
+
+      const data = await this.dataSource.query(
+        `
+        SELECT *, 
+          ST_Distance(location, ST_MakePoint($1, $2)::geography) AS distance
+        FROM restaurant
+        WHERE ST_DWithin(location, ST_MakePoint($1, $2)::geography, $3)
+        ORDER BY distance
+        LIMIT $4 OFFSET $5
+      `,
+        [lng, lat, radius, limit, offset],
+      );
       return {
         ok: true,
-        restaurant,
+        restaurants: data,
       };
     } catch {
       return {
         ok: false,
-        error: 'Could not find restaurant',
+        error: 'Could not load restaurants',
       };
     }
   }

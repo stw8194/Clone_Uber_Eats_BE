@@ -41,6 +41,10 @@ import {
   MyRestaurantOutput,
 } from './dtos/my-restaurant.dto';
 import { MyDishInput, MyDishOutput } from './dtos/my-dish.dto';
+import {
+  RestaurantsByDistanceInput,
+  RestaurantsByDistanceOutput,
+} from './dtos/restaurants-by-distance.dto';
 
 @Resolver((of) => Restaurant)
 export class RestaurantResolver {
@@ -113,6 +117,15 @@ export class RestaurantResolver {
     @Args('input') searchRestaurantInput: SearchRestaurantInput,
   ): Promise<SearchRestaurantOutput> {
     return this.restaurantService.searchRestaurantByName(searchRestaurantInput);
+  }
+
+  @Query((returns) => RestaurantsByDistanceOutput)
+  restaurantsNearby(
+    @Args('input') restaurantsByDistanceInput: RestaurantsByDistanceInput,
+  ): Promise<RestaurantsByDistanceOutput> {
+    return this.restaurantService.findNearbyRestaurants(
+      restaurantsByDistanceInput,
+    );
   }
 }
 
