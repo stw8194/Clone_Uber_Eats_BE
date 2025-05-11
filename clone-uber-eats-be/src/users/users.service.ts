@@ -13,6 +13,11 @@ import { Verification } from './entities/verification.entity';
 import { VerifyEmailOutput } from './dtos/verify-email.dto';
 import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from 'src/mail/mail.service';
+import { Address } from './entities/address.entity';
+import {
+  AddClientAddressInput,
+  AddClientAddressOutput,
+} from './dtos/client-address.dto';
 
 @Injectable()
 export class UserService {
@@ -21,6 +26,8 @@ export class UserService {
     private readonly users: Repository<User>,
     @InjectRepository(Verification)
     private readonly verifications: Repository<Verification>,
+    @InjectRepository(Address)
+    private readonly addresses: Repository<Address>,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
   ) {}
@@ -44,9 +51,14 @@ export class UserService {
         }),
       );
       this.mailService.sendVerificationEmail(user.email, verification.code);
-      return { ok: true };
+      return {
+        ok: true,
+      };
     } catch {
-      return { ok: false, error: "Couldn't create account" };
+      return {
+        ok: false,
+        error: "Couldn't create account",
+      };
     }
   }
 
@@ -136,9 +148,30 @@ export class UserService {
         await this.verifications.delete(verification.id);
         return { ok: true };
       }
-      return { ok: false, error: 'Verification not found' };
+      return {
+        ok: false,
+        error: 'Verification not found',
+      };
     } catch {
-      return { ok: false, error: 'Could not verify email' };
+      return {
+        ok: false,
+        error: 'Could not verify email',
+      };
     }
+  }
+
+  async addAddress(
+    client: User,
+    addClientAddressInput: AddClientAddressInput,
+  ): Promise<AddClientAddressOutput> {
+    const address = this.addresses.create({
+      client,
+      ...addClientAddressInput,
+    });
+    await this.addresses.save(address);
+    return {
+      ok: true,
+      addressId: address.id,
+    };
   }
 }

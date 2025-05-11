@@ -56,7 +56,10 @@ export class Restaurant extends CoreEntity {
     spatialFeatureType: 'Point',
     srid: 4326,
   })
-  location: string;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
 
   @Field((type) => Category, { nullable: true })
   @ManyToOne((type) => Category, (category) => category.restaurants, {
@@ -94,6 +97,9 @@ export class Restaurant extends CoreEntity {
   @BeforeInsert()
   @BeforeUpdate()
   setLocation() {
-    this.location = `SRID=4326;POINT(${this.lng} ${this.lat})`;
+    this.location = {
+      type: 'Point',
+      coordinates: [this.lng, this.lat],
+    };
   }
 }

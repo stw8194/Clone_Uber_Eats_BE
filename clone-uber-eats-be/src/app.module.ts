@@ -22,6 +22,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UploadsModule } from './uploads/uploads.module';
+import { Address } from './users/entities/address.entity';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { UploadsModule } from './uploads/uploads.module';
         Order,
         OrderItem,
         Payment,
+        Address,
       ],
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({

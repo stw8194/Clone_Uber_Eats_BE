@@ -15,7 +15,7 @@ import {
 } from 'typeorm';
 import { CoreEntity } from 'src/common/entites/core.entity';
 import { User } from './user.entity';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 @InputType('AddressInputType')
 @ObjectType()
@@ -29,6 +29,11 @@ export class Address extends CoreEntity {
 
   @RelationId((address: Address) => address.client)
   clientId: number;
+
+  @Column()
+  @Field((type) => String)
+  @IsString()
+  address: string;
 
   @Column({ type: 'double precision' })
   @Field((type) => Float)
@@ -46,11 +51,17 @@ export class Address extends CoreEntity {
     spatialFeatureType: 'Point',
     srid: 4326,
   })
-  location: string;
+  location: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
 
   @BeforeInsert()
   @BeforeUpdate()
   setLocation() {
-    this.location = `SRID=4326;POINT(${this.lng} ${this.lat})`;
+    this.location = {
+      type: 'Point',
+      coordinates: [this.lng, this.lat],
+    };
   }
 }
