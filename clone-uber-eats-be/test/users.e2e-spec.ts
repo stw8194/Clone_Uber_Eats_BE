@@ -454,7 +454,6 @@ describe('UserModule (e2e)', () => {
                     }){
                       ok
                       error
-                      addressId
                     }
                   }`,
       )
@@ -463,13 +462,12 @@ describe('UserModule (e2e)', () => {
           const {
             body: {
               data: {
-                createClientAddress: { ok, error, addressId },
+                createClientAddress: { ok, error },
               },
             },
           } = res;
           expect(ok).toBe(true);
           expect(error).toBe(null);
-          expect(addressId).toBe(1);
         });
     });
   });

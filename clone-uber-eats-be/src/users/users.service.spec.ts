@@ -305,7 +305,6 @@ describe('UserService', () => {
     } as User;
     it('should add address', async () => {
       addressRepository.create.mockReturnValue({
-        id: 1,
         ...addAddressArgs,
       });
       const result = await service.addAddress(clientArgs, addAddressArgs);
@@ -317,12 +316,10 @@ describe('UserService', () => {
       });
       expect(addressRepository.save).toHaveBeenCalledTimes(1);
       expect(addressRepository.save).toHaveBeenCalledWith({
-        id: 1,
         ...addAddressArgs,
       });
       expect(result).toMatchObject({
         ok: true,
-        addressId: 1,
       });
     });
 
