@@ -598,8 +598,8 @@ describe('RestaurantModule (e2e)', () => {
           expect(ok).toBe(true);
           expect(error).toBe(null);
           expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
-          expect(totalPages).toBe(1);
-          expect(totalResults).toBe(5);
+          expect(totalPages).toBe(2);
+          expect(totalResults).toBe(10);
         });
     });
   });

@@ -320,7 +320,14 @@ export class RestaurantService {
           error: 'Restaurants not found',
         };
       }
-      const totalResults = data.length;
+      const [{ total: totalResults }] = await this.dataSource.query(
+        `
+        SELECT COUNT(*) as total
+        FROM restaurant
+        WHERE ST_DWithin(location, ST_MakePoint($1, $2)::geography, $3)
+        `,
+        [lng, lat, radius],
+      );
       return {
         ok: true,
         restaurants: data,

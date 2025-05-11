@@ -15,6 +15,14 @@ import {
   CreateClientAddressInput,
   CreateClientAddressOutput,
 } from './dtos/create-client-address.dto';
+import {
+  ClientAddressesInput,
+  ClientAddressesOutput,
+} from './dtos/client-addresses.dto';
+import {
+  DeleteClientAddressInput,
+  DeleteClientAddressOutput,
+} from './dtos/delete-client-address.dto';
 
 @Resolver((of) => User)
 export class UserResolver {
@@ -69,5 +77,23 @@ export class UserResolver {
     @Args('input') createclientAddressInput: CreateClientAddressInput,
   ): Promise<CreateClientAddressOutput> {
     return this.userService.addAddress(client, createclientAddressInput);
+  }
+
+  @Query((returns) => ClientAddressesOutput)
+  @Role(['Client'])
+  clientAddresses(
+    @AuthUser() client: User,
+    @Args('input') clientAddressesInput: ClientAddressesInput,
+  ): Promise<ClientAddressesOutput> {
+    return this.userService.clientAddresses(client, clientAddressesInput);
+  }
+
+  @Mutation((returns) => DeleteClientAddressOutput)
+  @Role(['Client'])
+  deleteClientAddress(
+    @AuthUser() client: User,
+    @Args('input') deleteClientAddressInput: DeleteClientAddressInput,
+  ): Promise<DeleteClientAddressOutput> {
+    return this.userService.deleteAddress(client, deleteClientAddressInput);
   }
 }

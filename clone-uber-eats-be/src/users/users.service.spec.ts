@@ -9,13 +9,21 @@ import { Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 
 const mockRepository = () => ({
+  find: jest.fn(),
   findOne: jest.fn(),
   findOneBy: jest.fn(),
   findOneByOrFail: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
   delete: jest.fn(),
+  countBy: jest.fn(),
 });
+
+const addressArgs = {
+  lat: 37.123,
+  lng: 123.456,
+  address: '',
+};
 
 const mockJwtService = {
   sign: jest.fn(() => 'signed-token'),
@@ -293,11 +301,6 @@ describe('UserService', () => {
   });
 
   describe('addAddress', () => {
-    const addAddressArgs = {
-      lat: 37.123,
-      lng: 123.456,
-      address: '',
-    };
     const clientArgs = {
       email: '',
       password: '',
@@ -305,18 +308,18 @@ describe('UserService', () => {
     } as User;
     it('should add address', async () => {
       addressRepository.create.mockReturnValue({
-        ...addAddressArgs,
+        ...addressArgs,
       });
-      const result = await service.addAddress(clientArgs, addAddressArgs);
+      const result = await service.addAddress(clientArgs, addressArgs);
 
       expect(addressRepository.create).toHaveBeenCalledTimes(1);
       expect(addressRepository.create).toHaveBeenCalledWith({
         client: clientArgs,
-        ...addAddressArgs,
+        ...addressArgs,
       });
       expect(addressRepository.save).toHaveBeenCalledTimes(1);
       expect(addressRepository.save).toHaveBeenCalledWith({
-        ...addAddressArgs,
+        ...addressArgs,
       });
       expect(result).toMatchObject({
         ok: true,
@@ -325,10 +328,92 @@ describe('UserService', () => {
 
     it('should fail on exception', async () => {
       addressRepository.save.mockRejectedValue(new Error());
-      const result = await service.addAddress(clientArgs, addAddressArgs);
+      const result = await service.addAddress(clientArgs, addressArgs);
       expect(result).toEqual({
         ok: false,
         error: 'Could not add address',
+      });
+    });
+  });
+
+  describe('Addresses', () => {
+    const clientArgs = {
+      id: 1,
+      email: '',
+      password: '',
+      role: UserRole.Client,
+    } as User;
+    const paginationArgs = {
+      page: 1,
+      limit: 1,
+    };
+    it('should fail if address not found', async () => {
+      addressRepository.find.mockResolvedValue(undefined);
+      const result = await service.clientAddresses(clientArgs, paginationArgs);
+
+      expect(addressRepository.find).toHaveBeenCalledTimes(1);
+      expect(addressRepository.find).toHaveBeenCalledWith({
+        where: {
+          client: { id: clientArgs.id },
+        },
+        take: paginationArgs.limit,
+        skip: (paginationArgs.page - 1) * paginationArgs.limit,
+      });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Addresses not found',
+      });
+    });
+
+    it('should find addresses', async () => {
+      addressRepository.find.mockResolvedValue([addressArgs]);
+      addressRepository.countBy.mockResolvedValue(5);
+      const result = await service.clientAddresses(clientArgs, paginationArgs);
+
+      expect(result).toEqual({
+        ok: true,
+        addresses: [addressArgs],
+        totalPages: 5,
+        totalResults: 5,
+      });
+    });
+
+    it('should fail on exception', async () => {
+      addressRepository.find.mockRejectedValue(new Error());
+      const result = await service.clientAddresses(clientArgs, paginationArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not find addresses',
+      });
+    });
+  });
+
+  describe('deleteAddress', () => {
+    const clientArgs = {
+      email: '',
+      password: '',
+      role: UserRole.Client,
+    } as User;
+    it('should delete address', async () => {
+      addressRepository.delete.mockResolvedValue(addressArgs);
+      const result = await service.deleteAddress(clientArgs, { addressId: 1 });
+
+      expect(addressRepository.delete).toHaveBeenCalledTimes(1);
+      expect(addressRepository.delete).toHaveBeenCalledWith({
+        id: 1,
+        client: { id: clientArgs.id },
+      });
+      expect(result).toMatchObject({
+        ok: true,
+      });
+    });
+
+    it('should fail on exception', async () => {
+      addressRepository.delete.mockRejectedValue(new Error());
+      const result = await service.deleteAddress(clientArgs, { addressId: 1 });
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not delete address',
       });
     });
   });

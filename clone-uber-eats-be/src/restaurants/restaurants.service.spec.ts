@@ -563,7 +563,9 @@ describe('RestaurantService', () => {
     });
 
     it('should find nearby restaurants', async () => {
-      dataSource.query.mockResolvedValue(restaurantsArgs);
+      dataSource.query
+        .mockResolvedValueOnce(restaurantsArgs)
+        .mockResolvedValueOnce([{ total: totalResults }]);
       const result = await service.findNearbyRestaurants(
         findNearbyRestaurantsArgs,
       );

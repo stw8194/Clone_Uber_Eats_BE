@@ -18,6 +18,14 @@ import {
   CreateClientAddressInput,
   CreateClientAddressOutput,
 } from './dtos/create-client-address.dto';
+import {
+  ClientAddressesInput,
+  ClientAddressesOutput,
+} from './dtos/client-addresses.dto';
+import {
+  DeleteClientAddressInput,
+  DeleteClientAddressOutput,
+} from './dtos/delete-client-address.dto';
 
 @Injectable()
 export class UserService {
@@ -177,6 +185,58 @@ export class UserService {
       return {
         ok: false,
         error: 'Could not add address',
+      };
+    }
+  }
+
+  async clientAddresses(
+    client: User,
+    { page, limit }: ClientAddressesInput,
+  ): Promise<ClientAddressesOutput> {
+    try {
+      const addresses = await this.addresses.find({
+        where: {
+          client: { id: client.id },
+        },
+        take: limit,
+        skip: (page - 1) * limit,
+      });
+      if (!addresses) {
+        return {
+          ok: false,
+          error: 'Addresses not found',
+        };
+      }
+      const totalResults = await this.addresses.countBy({
+        client: { id: client.id },
+      });
+      return {
+        ok: true,
+        addresses,
+        totalPages: Math.ceil(totalResults / limit),
+        totalResults,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not find addresses',
+      };
+    }
+  }
+
+  async deleteAddress(
+    client: User,
+    { addressId }: DeleteClientAddressInput,
+  ): Promise<DeleteClientAddressOutput> {
+    try {
+      await this.addresses.delete({ id: addressId, client: { id: client.id } });
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not delete address',
       };
     }
   }

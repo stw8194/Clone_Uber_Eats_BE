@@ -6,6 +6,7 @@ import { DataSource, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from 'src/users/entities/user.entity';
 import { Verification } from 'src/users/entities/verification.entity';
+import { Address } from 'src/users/entities/address.entity';
 
 jest.mock('got', () => {
   return {
@@ -30,6 +31,7 @@ describe('UserModule (e2e)', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
   let verificationRepository: Repository<Verification>;
+  let addressRepository: Repository<Address>;
   let jwtToken: string;
 
   const baseTest = () => request(app.getHttpServer()).post(GRAPHQL_ENDPOINT);
@@ -45,6 +47,9 @@ describe('UserModule (e2e)', () => {
     usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
     verificationRepository = module.get<Repository<Verification>>(
       getRepositoryToken(Verification),
+    );
+    addressRepository = module.get<Repository<Address>>(
+      getRepositoryToken(Address),
     );
     await app.init();
   });
@@ -463,6 +468,88 @@ describe('UserModule (e2e)', () => {
             body: {
               data: {
                 createClientAddress: { ok, error },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+        });
+    });
+  });
+
+  describe('ClientAddresses', () => {
+    it('should show addresses', () => {
+      return privateTest(`query {
+        clientAddresses(
+          input:{
+            page:1,
+            limit:5,
+          }) {
+          ok
+          error
+          totalPages
+          totalResults
+          addresses {
+            address
+            lat
+            lng
+          }
+        }
+      }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                clientAddresses: {
+                  ok,
+                  error,
+                  totalPages,
+                  totalResults,
+                  addresses,
+                },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(totalPages).toBe(1);
+          expect(totalResults).toBe(1);
+          expect(addresses).toEqual([
+            {
+              address: testAddress.address,
+              lat: testAddress.lat,
+              lng: testAddress.lng,
+            },
+          ]);
+        });
+    });
+  });
+
+  describe('deleteClientAddress', () => {
+    let addressId: number;
+    beforeAll(async () => {
+      const [address] = await addressRepository.find();
+      addressId = address.id;
+    });
+
+    it('should delete address', () => {
+      return privateTest(
+        `mutation{
+                    deleteClientAddress(input:{
+                      addressId: ${addressId}
+                    }){
+                      ok
+                      error
+                    }
+                  }`,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                deleteClientAddress: { ok, error },
               },
             },
           } = res;
