@@ -20,6 +20,12 @@ const testUser = {
   password: '1234',
 };
 
+const testAddress = {
+  address: 'testAddress',
+  lat: 12.345678,
+  lng: 123.456789,
+};
+
 describe('UserModule (e2e)', () => {
   let app: INestApplication;
   let usersRepository: Repository<User>;
@@ -394,6 +400,76 @@ describe('UserModule (e2e)', () => {
           } = res;
           expect(ok).toBe(false);
           expect(error).toBe('Verification not found');
+        });
+    });
+  });
+
+  describe('createClientAddress', () => {
+    beforeAll(async () => {
+      return publicTest(`mutation {
+        createAccount(
+          input:{
+            email:"client@test.com",
+            password:"${testUser.password}",
+            role:Client
+          }) {
+          ok
+          error
+        }
+      }`);
+    });
+
+    beforeAll(async () => {
+      return publicTest(`mutation {
+        login(
+          input:{
+            email:"client@test.com",
+            password:"${testUser.password}"
+          }) {
+          ok
+          error
+          token
+        }
+      }`)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                login: { token },
+              },
+            },
+          } = res;
+          jwtToken = token;
+        });
+    });
+
+    it('should add address', () => {
+      return privateTest(
+        `mutation{
+                    createClientAddress(input:{
+                      address:"${testAddress.address}"
+                      lat:${testAddress.lat}
+                      lng:${testAddress.lng}
+                    }){
+                      ok
+                      error
+                      addressId
+                    }
+                  }`,
+      )
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                createClientAddress: { ok, error, addressId },
+              },
+            },
+          } = res;
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(addressId).toBe(1);
         });
     });
   });

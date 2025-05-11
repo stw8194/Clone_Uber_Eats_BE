@@ -5,7 +5,7 @@ import { User, UserRole } from 'src/users/entities/user.entity';
 import { RestaurantRepository } from './repositories/restaurant.repository';
 import { CategoryRepository } from './repositories/category.repository';
 import { Dish } from './entities/dish.entity';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
 
 const mockRepository = () => ({
@@ -21,15 +21,20 @@ const mockRepository = () => ({
   getOrCreate: jest.fn(),
   countBy: jest.fn(),
 });
+const mockDataSource = () => ({
+  query: jest.fn(),
+});
 
 type mockCustumRepository<T = any> = Partial<Record<keyof T, jest.Mock>>;
 type mockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
+type dataSource = ReturnType<typeof mockDataSource>;
 
 describe('RestaurantService', () => {
   let service: RestaurantService;
   let restaurantRepository: mockCustumRepository<RestaurantRepository>;
   let categoryRepository: mockCustumRepository<CategoryRepository>;
   let dishRepository: mockRepository<Dish>;
+  let dataSource: dataSource;
   beforeEach(async () => {
     jest.clearAllMocks();
     const module = await Test.createTestingModule({
@@ -47,12 +52,17 @@ describe('RestaurantService', () => {
           provide: getRepositoryToken(Dish),
           useValue: mockRepository(),
         },
+        {
+          provide: DataSource,
+          useValue: mockDataSource(),
+        },
       ],
     }).compile();
     service = module.get<RestaurantService>(RestaurantService);
     restaurantRepository = module.get(getRepositoryToken(RestaurantRepository));
     categoryRepository = module.get(getRepositoryToken(CategoryRepository));
     dishRepository = module.get(getRepositoryToken(Dish));
+    dataSource = module.get(DataSource);
   });
 
   const ownerArgs = {
@@ -490,14 +500,14 @@ describe('RestaurantService', () => {
 
     it('should search restaurant by name', async () => {
       restaurantRepository.findAndCount.mockResolvedValue([
-        restaurantArgs,
+        restaurantsArgs,
         totalResults,
       ]);
       const result = await service.searchRestaurantByName(searchRestaurantArgs);
 
       expect(result).toEqual({
         ok: true,
-        restaurants: restaurantArgs,
+        restaurants: restaurantsArgs,
         totalPages: Math.ceil(totalResults / searchRestaurantArgs.limit),
         totalResults,
       });
@@ -509,6 +519,71 @@ describe('RestaurantService', () => {
       expect(result).toEqual({
         ok: false,
         error: 'Could not search restaurants',
+      });
+    });
+  });
+
+  describe('findNearbyRestaurants', () => {
+    const findNearbyRestaurantsArgs = {
+      page: 1,
+      limit: 1,
+      lat: 1,
+      lng: 1,
+    };
+    it('should fail if restaurants not found', async () => {
+      dataSource.query.mockResolvedValue(undefined);
+      const result = await service.findNearbyRestaurants(
+        findNearbyRestaurantsArgs,
+      );
+      const offset =
+        (findNearbyRestaurantsArgs.page - 1) * findNearbyRestaurantsArgs.limit;
+
+      expect(dataSource.query).toHaveBeenCalledTimes(1);
+      expect(dataSource.query).toHaveBeenCalledWith(
+        `
+        SELECT *, 
+          ST_Distance(location, ST_MakePoint($1, $2)::geography) AS distance
+        FROM restaurant
+        WHERE ST_DWithin(location, ST_MakePoint($1, $2)::geography, $3)
+        ORDER BY distance
+        LIMIT $4 OFFSET $5
+      `,
+        [
+          findNearbyRestaurantsArgs.lng,
+          findNearbyRestaurantsArgs.lat,
+          3000,
+          findNearbyRestaurantsArgs.limit,
+          offset,
+        ],
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'Restaurants not found',
+      });
+    });
+
+    it('should find nearby restaurants', async () => {
+      dataSource.query.mockResolvedValue(restaurantsArgs);
+      const result = await service.findNearbyRestaurants(
+        findNearbyRestaurantsArgs,
+      );
+
+      expect(result).toEqual({
+        ok: true,
+        restaurants: restaurantsArgs,
+        totalPages: Math.ceil(totalResults / findNearbyRestaurantsArgs.limit),
+        totalResults,
+      });
+    });
+
+    it('fail on exception', async () => {
+      dataSource.query.mockRejectedValue(new Error());
+      const result = await service.findNearbyRestaurants(
+        findNearbyRestaurantsArgs,
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not find restaurants',
       });
     });
   });

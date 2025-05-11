@@ -49,6 +49,11 @@ const testDish = {
   description: 'description',
 };
 
+const testCoord = {
+  lat: 37.123456,
+  lng: 123.456789,
+};
+
 const TEST_PAGE = 2;
 const TEST_LIMIT = 5;
 
@@ -544,6 +549,57 @@ describe('RestaurantModule (e2e)', () => {
           expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
           expect(totalPages).toBe(2);
           expect(totalResults).toBe(9);
+        });
+    });
+  });
+
+  describe('restaurantsNearby', () => {
+    it('should find restaurant nearby', async () => {
+      return publicTest(`
+        {
+          restaurantsNearby(input:{
+            page: 1
+            limit: ${TEST_LIMIT}
+            lat: ${testCoord.lat}
+            lng: ${testCoord.lng}
+          }) {
+            ok
+            error
+            restaurants {
+              name  
+            }
+            totalPages
+            totalResults
+            }}
+        `)
+        .expect(200)
+        .expect((res) => {
+          const {
+            body: {
+              data: {
+                restaurantsNearby: {
+                  ok,
+                  error,
+                  restaurants,
+                  totalPages,
+                  totalResults,
+                },
+              },
+            },
+          } = res;
+          const expectedNames = [
+            'new name',
+            'name number1',
+            'name number2',
+            'name number3',
+            'name number4',
+          ];
+
+          expect(ok).toBe(true);
+          expect(error).toBe(null);
+          expect(restaurants).toEqual(expectedNames.map((name) => ({ name })));
+          expect(totalPages).toBe(1);
+          expect(totalResults).toBe(5);
         });
     });
   });

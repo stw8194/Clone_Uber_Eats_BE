@@ -15,9 +15,9 @@ import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Address } from './entities/address.entity';
 import {
-  AddClientAddressInput,
-  AddClientAddressOutput,
-} from './dtos/client-address.dto';
+  CreateClientAddressInput,
+  CreateClientAddressOutput,
+} from './dtos/create-client-address.dto';
 
 @Injectable()
 export class UserService {
@@ -162,16 +162,23 @@ export class UserService {
 
   async addAddress(
     client: User,
-    addClientAddressInput: AddClientAddressInput,
-  ): Promise<AddClientAddressOutput> {
-    const address = this.addresses.create({
-      client,
-      ...addClientAddressInput,
-    });
-    await this.addresses.save(address);
-    return {
-      ok: true,
-      addressId: address.id,
-    };
+    createClientAddressInput: CreateClientAddressInput,
+  ): Promise<CreateClientAddressOutput> {
+    try {
+      const address = this.addresses.create({
+        client,
+        ...createClientAddressInput,
+      });
+      await this.addresses.save(address);
+      return {
+        ok: true,
+        addressId: address.id,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not add address',
+      };
+    }
   }
 }

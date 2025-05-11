@@ -313,14 +313,24 @@ export class RestaurantService {
       `,
         [lng, lat, radius, limit, offset],
       );
+
+      if (!data) {
+        return {
+          ok: false,
+          error: 'Restaurants not found',
+        };
+      }
+      const totalResults = data.length;
       return {
         ok: true,
         restaurants: data,
+        totalPages: Math.ceil(totalResults / limit),
+        totalResults,
       };
     } catch {
       return {
         ok: false,
-        error: 'Could not load restaurants',
+        error: 'Could not find restaurants',
       };
     }
   }

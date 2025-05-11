@@ -12,9 +12,9 @@ import { EditProfileInput, EditProfileOutput } from './dtos/edit-profile.dto';
 import { VerifyEmailInput, VerifyEmailOutput } from './dtos/verify-email.dto';
 import { Role } from 'src/auth/role.decorator';
 import {
-  AddClientAddressInput,
-  AddClientAddressOutput,
-} from './dtos/client-address.dto';
+  CreateClientAddressInput,
+  CreateClientAddressOutput,
+} from './dtos/create-client-address.dto';
 
 @Resolver((of) => User)
 export class UserResolver {
@@ -62,12 +62,12 @@ export class UserResolver {
     return this.userService.verifyEmail(code);
   }
 
-  @Mutation((returns) => AddClientAddressOutput)
+  @Mutation((returns) => CreateClientAddressOutput)
   @Role(['Client'])
-  addClientAddress(
+  createClientAddress(
     @AuthUser() client: User,
-    @Args('input') addclientAddressInput: AddClientAddressInput,
-  ): Promise<AddClientAddressOutput> {
-    return this.userService.addAddress(client, addclientAddressInput);
+    @Args('input') createclientAddressInput: CreateClientAddressInput,
+  ): Promise<CreateClientAddressOutput> {
+    return this.userService.addAddress(client, createclientAddressInput);
   }
 }

@@ -6,6 +6,7 @@ import { Verification } from './entities/verification.entity';
 import { JwtService } from 'src/jwt/jwt.service';
 import { MailService } from 'src/mail/mail.service';
 import { Repository } from 'typeorm';
+import { Address } from './entities/address.entity';
 
 const mockRepository = () => ({
   findOne: jest.fn(),
@@ -33,6 +34,7 @@ describe('UserService', () => {
   let jwtService: JwtService;
   let userRepository: mockRepository<User>;
   let verificationRepository: mockRepository<Verification>;
+  let addressRepository: mockRepository<Address>;
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
@@ -43,6 +45,10 @@ describe('UserService', () => {
         },
         {
           provide: getRepositoryToken(Verification),
+          useValue: mockRepository(),
+        },
+        {
+          provide: getRepositoryToken(Address),
           useValue: mockRepository(),
         },
         {
@@ -60,6 +66,7 @@ describe('UserService', () => {
     jwtService = module.get<JwtService>(JwtService);
     userRepository = module.get(getRepositoryToken(User));
     verificationRepository = module.get(getRepositoryToken(Verification));
+    addressRepository = module.get(getRepositoryToken(Address));
   });
 
   it('should be defined', () => {
@@ -282,6 +289,50 @@ describe('UserService', () => {
       verificationRepository.findOne.mockRejectedValue(new Error());
       const result = await service.verifyEmail('');
       expect(result).toEqual({ ok: false, error: 'Could not verify email' });
+    });
+  });
+
+  describe('addAddress', () => {
+    const addAddressArgs = {
+      lat: 37.123,
+      lng: 123.456,
+      address: '',
+    };
+    const clientArgs = {
+      email: '',
+      password: '',
+      role: UserRole.Client,
+    } as User;
+    it('should add address', async () => {
+      addressRepository.create.mockReturnValue({
+        id: 1,
+        ...addAddressArgs,
+      });
+      const result = await service.addAddress(clientArgs, addAddressArgs);
+
+      expect(addressRepository.create).toHaveBeenCalledTimes(1);
+      expect(addressRepository.create).toHaveBeenCalledWith({
+        client: clientArgs,
+        ...addAddressArgs,
+      });
+      expect(addressRepository.save).toHaveBeenCalledTimes(1);
+      expect(addressRepository.save).toHaveBeenCalledWith({
+        id: 1,
+        ...addAddressArgs,
+      });
+      expect(result).toMatchObject({
+        ok: true,
+        addressId: 1,
+      });
+    });
+
+    it('should fail on exception', async () => {
+      addressRepository.save.mockRejectedValue(new Error());
+      const result = await service.addAddress(clientArgs, addAddressArgs);
+      expect(result).toEqual({
+        ok: false,
+        error: 'Could not add address',
+      });
     });
   });
 });
