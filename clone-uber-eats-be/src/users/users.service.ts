@@ -180,6 +180,7 @@ export class UserService {
       await this.addresses.save(address);
       return {
         ok: true,
+        addressId: address.id,
       };
     } catch {
       return {

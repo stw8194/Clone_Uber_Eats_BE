@@ -1,4 +1,4 @@
-import { InputType, ObjectType, PickType } from '@nestjs/graphql';
+import { Field, InputType, ObjectType, PickType } from '@nestjs/graphql';
 import { CoreOutput } from 'src/common/dtos/output.dto';
 import { Address } from '../entities/address.entity';
 
@@ -10,4 +10,7 @@ export class CreateClientAddressInput extends PickType(Address, [
 ]) {}
 
 @ObjectType()
-export class CreateClientAddressOutput extends CoreOutput {}
+export class CreateClientAddressOutput extends CoreOutput {
+  @Field((type) => Number, { nullable: true })
+  addressId?: number;
+}
