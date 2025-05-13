@@ -36,9 +36,9 @@ import {
 } from './dtos/my-restaurant.dto';
 import { MyDishInput, MyDishOutput } from './dtos/my-dish.dto';
 import {
-  RestaurantsByDistanceInput,
-  RestaurantsByDistanceOutput,
-} from './dtos/restaurants-by-distance.dto';
+  RestaurantsNearbyInput,
+  RestaurantsNearbyOutput,
+} from './dtos/restaurants-nearby.dto';
 
 @Injectable()
 export class RestaurantService {
@@ -297,7 +297,7 @@ export class RestaurantService {
     limit,
     lat,
     lng,
-  }: RestaurantsByDistanceInput): Promise<RestaurantsByDistanceOutput> {
+  }: RestaurantsNearbyInput): Promise<RestaurantsNearbyOutput> {
     try {
       const radius = 3000;
       const offset = (page - 1) * limit;
