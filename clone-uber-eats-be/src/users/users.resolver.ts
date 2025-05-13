@@ -98,11 +98,8 @@ export class UserResolver {
 
   @Query((returns) => ClientAddressesOutput)
   @Role(['Client'])
-  clientAddresses(
-    @AuthUser() client: User,
-    @Args('input') clientAddressesInput: ClientAddressesInput,
-  ): Promise<ClientAddressesOutput> {
-    return this.userService.clientAddresses(client, clientAddressesInput);
+  clientAddresses(@AuthUser() client: User): Promise<ClientAddressesOutput> {
+    return this.userService.clientAddresses(client);
   }
 
   @Mutation((returns) => DeleteClientAddressOutput)

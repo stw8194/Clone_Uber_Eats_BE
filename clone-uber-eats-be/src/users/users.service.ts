@@ -205,6 +205,9 @@ export class UserService {
       return {
         ok: true,
         addressId: address.id,
+        address: address.address,
+        lat: address.lat,
+        lng: address.lng,
       };
     } catch {
       return {
@@ -214,17 +217,10 @@ export class UserService {
     }
   }
 
-  async clientAddresses(
-    client: User,
-    { page, limit }: ClientAddressesInput,
-  ): Promise<ClientAddressesOutput> {
+  async clientAddresses(client: User): Promise<ClientAddressesOutput> {
     try {
-      const addresses = await this.addresses.find({
-        where: {
-          client: { id: client.id },
-        },
-        take: limit,
-        skip: (page - 1) * limit,
+      const addresses = await this.addresses.findBy({
+        client: { id: client.id },
       });
       if (!addresses) {
         return {
@@ -232,14 +228,9 @@ export class UserService {
           error: 'Addresses not found',
         };
       }
-      const totalResults = await this.addresses.countBy({
-        client: { id: client.id },
-      });
       return {
         ok: true,
         addresses,
-        totalPages: Math.ceil(totalResults / limit),
-        totalResults,
       };
     } catch {
       return {
