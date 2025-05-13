@@ -53,8 +53,12 @@ export class User extends CoreEntity {
   @OneToMany((type) => Address, (addresses) => addresses.client)
   addresses?: Address[];
 
-  @OneToOne((type) => Address, { onDelete: 'SET NULL' })
-  @JoinColumn()
+  @OneToOne(() => Address, { onDelete: 'SET NULL', eager: false })
+  @JoinColumn({ name: 'selectedAddressId' })
+  selectedAddress?: Address;
+
+  @Field((type) => Number, { nullable: true })
+  @Column({ name: 'selectedAddressId', nullable: true })
   selectedAddressId?: number;
 
   @Column({ default: false })
