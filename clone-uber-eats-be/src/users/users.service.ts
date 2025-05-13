@@ -177,7 +177,8 @@ export class UserService {
     { addressId }: ChangeSelectedClientAddressInput,
   ): Promise<ChangeSelectedClientAddressOutput> {
     try {
-      client.selectedAddressId = addressId;
+      const address = await this.addresses.findOneBy({ id: addressId });
+      client.selectedAddress = address;
       await this.users.save(client);
       return {
         ok: true,
