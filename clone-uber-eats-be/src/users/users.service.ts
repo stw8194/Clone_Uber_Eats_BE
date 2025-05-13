@@ -26,6 +26,10 @@ import {
   DeleteClientAddressInput,
   DeleteClientAddressOutput,
 } from './dtos/delete-client-address.dto';
+import {
+  ChangeSelectedClientAddressInput,
+  ChangeSelectedClientAddressOutput,
+} from './dtos/change-selected-client-address.dto';
 
 @Injectable()
 export class UserService {
@@ -168,6 +172,24 @@ export class UserService {
     }
   }
 
+  async changeSelectedClientAddress(
+    client: User,
+    { addressId }: ChangeSelectedClientAddressInput,
+  ): Promise<ChangeSelectedClientAddressOutput> {
+    try {
+      client.selectedAddressId = addressId;
+      await this.users.save(client);
+      return {
+        ok: true,
+      };
+    } catch {
+      return {
+        ok: false,
+        error: 'Could not change seleted address',
+      };
+    }
+  }
+
   async addAddress(
     client: User,
     createClientAddressInput: CreateClientAddressInput,
@@ -178,6 +200,7 @@ export class UserService {
         ...createClientAddressInput,
       });
       await this.addresses.save(address);
+      await this.changeSelectedClientAddress(client, { addressId: address.id });
       return {
         ok: true,
         addressId: address.id,

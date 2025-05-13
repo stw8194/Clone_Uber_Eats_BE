@@ -18,7 +18,6 @@ import { RestaurantRepository } from './repositories/restaurant.repository';
 import { Restaurant } from './entities/restaurant.entity';
 import { AllCategoriesOutput } from './dtos/all-categories.dto';
 import { CategoryInput, CategoryOutput } from './dtos/category.dto';
-import { RestaurantsInput, RestaurantsOutput } from './dtos/restaurants.dto';
 import { RestaurantInput, RestaurantOutput } from './dtos/restaurant.dto';
 import {
   SearchRestaurantInput,
@@ -256,38 +255,6 @@ export class RestaurantService {
       return {
         ok: false,
         error: 'Could not find restaurant',
-      };
-    }
-  }
-
-  async allRestaurants({
-    page,
-    limit,
-  }: RestaurantsInput): Promise<RestaurantsOutput> {
-    try {
-      const [results, totalResults] = await this.restaurants.findAndCount({
-        take: limit,
-        skip: (page - 1) * limit,
-        order: {
-          isPromoted: 'DESC',
-        },
-      });
-      if (!results) {
-        return {
-          ok: false,
-          error: 'Restaurants not found',
-        };
-      }
-      return {
-        ok: true,
-        results,
-        totalPages: Math.ceil(totalResults / limit),
-        totalResults,
-      };
-    } catch {
-      return {
-        ok: false,
-        error: 'Could not load restaurants',
       };
     }
   }

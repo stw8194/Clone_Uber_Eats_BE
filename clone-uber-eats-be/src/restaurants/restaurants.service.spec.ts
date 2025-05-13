@@ -383,57 +383,6 @@ describe('RestaurantService', () => {
     });
   });
 
-  describe('allRestaurants', () => {
-    const findRestaurantsArgs = {
-      page: 1,
-      limit: 1,
-    };
-    it('should fail if restaurants not found', async () => {
-      restaurantRepository.findAndCount.mockResolvedValue([
-        undefined,
-        undefined,
-      ]);
-      const result = await service.allRestaurants(findRestaurantsArgs);
-
-      expect(restaurantRepository.findAndCount).toHaveBeenCalledTimes(1);
-      expect(restaurantRepository.findAndCount).toHaveBeenCalledWith({
-        take: findRestaurantsArgs.limit,
-        skip: (findRestaurantsArgs.page - 1) * findRestaurantsArgs.limit,
-        order: {
-          isPromoted: 'DESC',
-        },
-      });
-      expect(result).toEqual({
-        ok: false,
-        error: 'Restaurants not found',
-      });
-    });
-
-    it('should show all restaurants', async () => {
-      restaurantRepository.findAndCount.mockResolvedValue([
-        restaurantsArgs,
-        totalResults,
-      ]);
-      const result = await service.allRestaurants(findRestaurantsArgs);
-
-      expect(result).toEqual({
-        ok: true,
-        results: restaurantsArgs,
-        totalPages: Math.ceil(totalResults / findRestaurantsArgs.limit),
-        totalResults,
-      });
-    });
-
-    it('fail on exception', async () => {
-      restaurantRepository.findAndCount.mockRejectedValue(new Error());
-      const result = await service.allRestaurants(findRestaurantsArgs);
-      expect(result).toEqual({
-        ok: false,
-        error: 'Could not load restaurants',
-      });
-    });
-  });
-
   describe('findRestaurantById', () => {
     const findRestaurantArgs = {
       restaurantId: 1,

@@ -23,6 +23,10 @@ import {
   DeleteClientAddressInput,
   DeleteClientAddressOutput,
 } from './dtos/delete-client-address.dto';
+import {
+  ChangeSelectedClientAddressInput,
+  ChangeSelectedClientAddressOutput,
+} from './dtos/change-selected-client-address.dto';
 
 @Resolver((of) => User)
 export class UserResolver {
@@ -77,6 +81,19 @@ export class UserResolver {
     @Args('input') createclientAddressInput: CreateClientAddressInput,
   ): Promise<CreateClientAddressOutput> {
     return this.userService.addAddress(client, createclientAddressInput);
+  }
+
+  @Mutation((returns) => ChangeSelectedClientAddressOutput)
+  @Role(['Client'])
+  changeSelectedClientAddress(
+    @AuthUser() client: User,
+    @Args('input')
+    changeSelectedClientAddressInput: ChangeSelectedClientAddressInput,
+  ): Promise<ChangeSelectedClientAddressOutput> {
+    return this.userService.changeSelectedClientAddress(
+      client,
+      changeSelectedClientAddressInput,
+    );
   }
 
   @Query((returns) => ClientAddressesOutput)
